@@ -311,20 +311,7 @@ void configTemp(String riego)
     }
 }
 
-int solicitarTiempo(String riego)
-{
-    Serial.print("Ingrese el tiempo de ");
-    Serial.print(riego);
-    Serial.println(" en milisegundos:");
 
-    while (!Serial.available())
-    {
-        // Esperar a que esté disponible la entrada serial
-    }
-    int tiempo = Serial.parseInt(); // Leer el tiempo ingresado
-    Serial.println(tiempo);         // Imprimir el tiempo ingresado
-    return tiempo;
-}
 
 void iniciarRiego(String riego)
 {
