@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Riego</title>
+</head>
+
+<body>
+    <h1>Control de Riego</h1>
+
+    <h2>Estado del Riego Interior:</h2>
+    <button onclick="controlRiego('interior', 'encender')">Encender</button>
+    <button onclick="controlRiego('interior', 'apagar')">Apagar</button>
+
+    <h2>Estado del Riego Exterior:</h2>
+    <button onclick="controlRiego('exterior', 'encender')">Encender</button>
+    <button onclick="controlRiego('exterior', 'apagar')">Apagar</button>
+
+    <h2>Datos de Sensores:</h2>
+    <div id="datoTemp"></div>
+    <div id="datoPresion"></div>
+    <div id="datoAltitud"></div>
+
+    <script>
+        const socketSensors = new WebSocket('ws://' + window.location.host + ':81');
+        const socketInterior = new WebSocket('ws://' + window.location.host + ':82');
+        const socketExterior = new WebSocket('ws://' + window.location.host + ':83');
+
+        // Manejadores de eventos cuando se abre cada socket
+        socketSensors.onopen = function (event) {
+            console.log('Conectado al canal de datos de sensores');
+        };
+
+        socketInterior.onopen = function (event) {
+            console.log('Conectado al canal de control de riego interior');
+        };
+
+        socketExterior.onopen = function (event) {
+            console.log('Conectado al canal de control de riego exterior');
+        };
+
+        // Funciones para enviar mensajes de control de riego
+        function controlRiego(tipo, accion) {
+            let socket;
+            if (tipo === 'interior') {
+                socket = socketInterior;
+            } else if (tipo === 'exterior') {
+                socket = socketExterior;
+            } else {
+                console.error('Tipo de riego no válido');
+                return;
+            }
+
+            // Verificar que el socket esté abierto antes de enviar el mensaje
+            if (socket.readyState === WebSocket.OPEN) {
+                const mensaje = accion === 'encender' ? 'ON' : 'OFF';
+                socket.send(mensaje);
+                console.log('Enviado:', mensaje);
+            } else {
+                console.error('El socket no está listo');
+            }
+        }
+
+        // Manejadores de eventos para mensajes recibidos del canal de datos de sensores
+        socketSensors.onmessage = function (event) {
+            console.log('Mensaje recibido del canal de datos de sensores:', event.data);
+
+            // Separar el tipo de dato y el valor del mensaje recibido
+            var mensaje = event.data.split(':');
+            var tipoDato = mensaje[0];
+            var valor = mensaje[1];
+
+            // Mostrar el tipo de dato y el valor en la interfaz de usuario
+            if (tipoDato === 'Temperatura') {
+                document.getElementById('datoTemp').innerText = 'Temperatura: ' + valor + '°C';
+            } else if (tipoDato === 'Presion') {
+                document.getElementById('datoPresion').innerText = 'Presión: ' + valor + ' Pa';
+            }else if (tipoDato === 'Altitud') {
+                document.getElementById('datoAltitud').innerText = 'Altitud: ' + valor + ' m';
+            }
+        };
+
+
+        socketInterior.onmessage = function (event) {
+            console.log('Mensaje recibido del canal de control de riego interior:', event.data);
+            // Manejar la respuesta del servidor para el control de riego interior
+        };
+
+        socketExterior.onmessage = function (event) {
+            console.log('Mensaje recibido del canal de control de riego exterior:', event.data);
+            // Manejar la respuesta del servidor para el control de riego exterior
+        };
+    </script>
+</body>
+
+</html>
