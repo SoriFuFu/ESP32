@@ -1,0 +1,64 @@
+{
+  "Wifi": {
+      "active": true,
+      "ssid": "Tarta-D",
+      "password": "OliviaPampo2024...",
+      "ip": "192.168.1.100",
+      "subnet": "255.255.255.0",
+      "Gateway": "192.168.1.1"
+  },
+  "MQTT": {
+      "active": true,
+      "server": " ",
+      "port": 1883,
+      "user": "MiUsuarioMQTT",
+      "password": "MiContraseñaMQTT",
+      "topic": "MiTemaMQTT"
+  },
+  "NTP": {
+      "active": true,
+      "server": "pool.ntp.org",
+      "timezone": 3600
+  },
+  "AP": {
+      "active": false,
+      "ssid": "BaBuIoT",
+      "password": "12345678"
+  },
+  "K1": {
+      "active": true,
+      "mode": "Modo1",
+      "name": "Dispositivo1",
+      "state": true,
+      "timer": 60,
+      "activationTime": 3600,
+      "deactivationTime": 7200
+  },
+  "K2": {
+      "active": true,
+      "mode": "Modo2",
+      "name": "Dispositivo2",
+      "state": false,
+      "timer": 60,
+      "activationTime": 3600,
+      "deactivationTime": 7200
+  },
+  "K3": {
+      "active": true,
+      "mode": "Modo3",
+      "name": "Dispositivo3",
+      "state": true,
+      "timer": 60,
+      "activationTime": 3600,
+      "deactivationTime": 7200
+  },
+  "K4": {
+      "active": true,
+      "mode": "Modo4",
+      "name": "Dispositivo4",
+      "state": false,
+      "timer": 60,
+      "activationTime": 3600,
+      "deactivationTime": 7200
+  }
+}
