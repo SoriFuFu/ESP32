@@ -3,9 +3,10 @@
       "active": true,
       "ssid": "Tarta-D",
       "password": "OliviaPampo2024...",
+      "staticIp": true,
       "ip": "192.168.1.100",
       "subnet": "255.255.255.0",
-      "Gateway": "192.168.1.1"
+      "gateway": "192.168.1.1"
   },
   "MQTT": {
       "active": true,
@@ -21,7 +22,7 @@
       "timezone": 3600
   },
   "AP": {
-      "active": false,
+      "active": true,
       "ssid": "BaBuIoT",
       "password": "12345678"
   },

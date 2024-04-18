@@ -12,41 +12,51 @@ public:
     void initWifi(const char *ssid, const char *password)
     {
         WiFi.begin(ssid, password);
-        Serial.print("Connecting to WiFi");
+        Serial.print("Conectando a WiFi ");
+        Serial.print(ssid);
         while (WiFi.status() != WL_CONNECTED)
         {
             delay(500);
             Serial.print(".");
         }
         Serial.println("");
-        Serial.println("WiFi connected");
+        Serial.println("WiFi conectado");
     }
 
     // Método para inicializar un punto de acceso (AP) con un SSID y contraseña
     void initAP(const char *ssid, const char *password)
     {
         WiFi.softAP(ssid, password);
-        Serial.println("Access Point started");
+        Serial.println("Punto de acceso iniciado");
+    }
+    void setApSSID(const char *ssid)
+    {
+        WiFi.softAP(ssid);
+        Serial.println("Punto de acceso configurado");
     }
 
     // Método para conectar al WiFi utilizando un SSID y contraseña y configurar un punto de acceso simultáneo
     void initWifiPlus(const char *ssid, const char *password, const char *apSsid, const char *apPassword)
     {
-        initWifi(ssid, password); // Conexión al WiFi
+        initWifi(ssid, password);   // Conexión al WiFi
         initAP(apSsid, apPassword); // Inicialización del punto de acceso
     }
 
     // Método para buscar y listar redes WiFi disponibles
-    void searchNetworks()
+    String searchNetworks()
     {
+        DynamicJsonDocument doc(1024);
+        JsonArray networksArray = doc.createNestedArray("networks");
         int numNetworks = WiFi.scanNetworks();
-        Serial.println("WiFi Networks:");
         for (int i = 0; i < numNetworks; i++)
         {
-            Serial.print(i + 1);
-            Serial.print(": ");
-            Serial.println(WiFi.SSID(i));
+            networksArray.add(WiFi.SSID(i));
         }
+
+        String networksJson;
+        serializeJson(doc, networksJson);
+
+        return networksJson;
     }
 
     // Método para configurar una IP estática
@@ -56,10 +66,17 @@ public:
         Serial.println("Static IP configured");
     }
 
-        // Método para obtener el SSID de la red WiFi a la que está conectado el dispositivo
+    // Método para obtener el SSID de la red WiFi a la que está conectado el dispositivo
     String getConnectedSSID()
     {
         return WiFi.SSID();
+    }
+
+    // Método para obtener la dirección IP asignada del AP
+
+    IPAddress getAPIP()
+    {
+        return WiFi.softAPIP();
     }
 
     // Método para obtener la dirección IP asignada al dispositivo
@@ -120,8 +137,16 @@ public:
         Serial.println("Access Point restarted");
     }
 
+    void configWifiDHCP()
+    {
+        WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+        Serial.println("DHCP configured");
 
-
+        IPAddress ipAddress = WiFi.localIP();
+        Serial.print("IP: ");
+        Serial.println(ipAddress);
+        ESP.restart();
+    }
 };
 
 #endif
