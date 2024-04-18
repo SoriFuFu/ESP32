@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Form, Button, Row, Col, Spinner } from 'react-bootstrap';
-import { BsSearchHeart, BsEye, BsEyeSlash    } from "react-icons/bs";
+import { BsSearchHeart, BsEye, BsEyeSlash } from "react-icons/bs";
+import { FaUpload } from "react-icons/fa";
 
 const Config = () => {
-    const [isLoading, setIsLoading] = useState(false); // Estado para el loading
+    const [isLoading, setIsLoading] = useState(false); // Estado para el loading de la página
+    const [isLoadingSearchNetworks, setIsLoadingSearchNetworks] = useState(false);
     const [showWifiPassword, setShowWifiPassword] = useState(false); // Estado para mostrar u ocultar la contraseña del WiFi
     const [showApPassword, setShowApPassword] = useState(false); // Estado para mostrar u ocultar la contraseña del AP
     const [wifiEnabled, setWifiEnabled] = useState(false);
     const [wifiSSID, setWifiSSID] = useState('');
     const [wifiPassword, setWifiPassword] = useState('');
+    const [networks, setNetworks] = useState([]);
+    const [selectedNetwork, setSelectedNetwork] = useState('');
+
     const [staticIPEnabled, setStaticIPEnabled] = useState(false);
     const [staticWifiIP, setStaticWifiIP] = useState('');
+    const [prevStaticWifiIP, setPrevStaticWifiIP] = useState('');
     const [staticSubnetMask, setStaticSubnetMask] = useState('');
+    const [prevStaticSubnetMask, setPrevStaticSubnetMask] = useState('');
     const [staticGateway, setStaticGateway] = useState('');
+    const [prevStaticGateway, setPrevStaticGateway] = useState('');
+
     const [apEnabled, setApEnabled] = useState(true);
     const [apName, setApName] = useState('');
     const [apPassword, setApPassword] = useState('');
-    const [networks, setNetworks] = useState([]);
-    const [selectedNetwork, setSelectedNetwork] = useState('');
+
 
     const [K1Enabled, setK1Enabled] = useState(false);
     const [K1Name, setK1Name] = useState('');
@@ -34,7 +42,7 @@ const Config = () => {
     const [webSocket, setWebSocket] = useState(null);
 
     useEffect(() => {
-        const ws = new WebSocket('ws://192.168.1.38:81');
+        const ws = new WebSocket('ws://babuiot.ddns.net:81');
         setWebSocket(ws);
 
         ws.onopen = () => {
@@ -49,9 +57,13 @@ const Config = () => {
             setStaticIPEnabled(data.Wifi.staticIp);
             setWifiSSID(data.Wifi.ssid);
             setWifiPassword(data.Wifi.password);
+
             setStaticWifiIP(data.Wifi.ip);
+            setPrevStaticWifiIP(data.Wifi.ip);
             setStaticSubnetMask(data.Wifi.subnet);
+            setPrevStaticSubnetMask(data.Wifi.subnet);
             setStaticGateway(data.Wifi.gateway);
+            setPrevStaticGateway(data.Wifi.gateway);
 
             setApEnabled(data.AP.active);
             setApName(data.AP.ssid);
@@ -86,34 +98,47 @@ const Config = () => {
 
     const handleGetNetworks = () => {
         if (webSocket) {
+            setIsLoadingSearchNetworks(true);
             console.log('Enviando mensaje getNetworks');
             let message = { action: 'getNetworks' };
             webSocket.send(JSON.stringify(message));
             webSocket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 setNetworks(data.networks);
+                setIsLoadingSearchNetworks(false);
             };
         } else {
             console.log('WebSocket no está inicializado');
         }
     };
 
-   
+
     useEffect(() => {
-        if (!staticIPEnabled) {
-            setStaticWifiIP('');
-            setStaticSubnetMask('');
-            setStaticGateway('');
-            if (webSocket) {
-                let message = { action: 'setStaticIp', staticIp: false };
-                webSocket.send(JSON.stringify(message)); // Envía true si staticIPEnabled es false
+        if (staticWifiIP !== prevStaticWifiIP && staticSubnetMask !== prevStaticSubnetMask && staticGateway !== prevStaticGateway) {
+            if (!staticIPEnabled) {
+                setStaticWifiIP('');
+                setStaticSubnetMask('');
+                setStaticGateway('');
+                if (webSocket) {
+                    let message = { action: 'setStaticIp', staticIp: false };
+                    webSocket.send(JSON.stringify(message)); // Envía true si staticIPEnabled es false
                 };
             } else {
                 console.log('WebSocket no está inicializado');
             }
+        }
     }, [staticIPEnabled]); // Asegúrate de incluir staticIPEnabled en la lista de dependencias
-    
+
+    const setConfigWifi = () => {
+        if (webSocket) {
+            let message = { action: 'setWifiConfig', active: wifiEnabled, ssid: wifiSSID, password: wifiPassword };
+            webSocket.send(JSON.stringify(message));
+        } else {
+            console.log('WebSocket no está inicializado');
+        }
+    }
     const setConfigStaticIP = () => {
+
         if (webSocket) {
             let message = { action: 'setStaticIp', staticIp: true, ip: staticWifiIP, subnet: staticSubnetMask, gateway: staticGateway };
             webSocket.send(JSON.stringify(message)); // Envía true si staticIPEnabled es true
@@ -122,8 +147,78 @@ const Config = () => {
         }
     }
 
+    const setAPConfig = () => {
+        if (webSocket) {
+            let message = { action: 'setAPConfig', active: apEnabled, ssid: apName, password: apPassword };
+            webSocket.send(JSON.stringify(message));
+        } else {
+            console.log('WebSocket no está inicializado');
+        }
+    }
+
+    const setRelayConfig = (relay) => {
+        if (webSocket) {
+            if (relay === 1) {
+                let message = { action: 'setRelayConfig', relay: relay, active: true, name: K1Name + relay, mode: K1Mode };
+            } else if (relay === 2) {
+                let message = { action: 'setRelayConfig', relay: relay, active: true, name: K2Name + relay, mode: K2Mode };
+            } else if (relay === 3) {
+                let message = { action: 'setRelayConfig', relay: relay, active: true, name: K3Name + relay, mode: K3Mode };
+            } else if (relay === 4) {
+                let message = { action: 'setRelayConfig', relay: relay, active: true, name: K4Name + relay, mode: K4Mode };
+            }
+            webSocket.send(JSON.stringify(message));
+        } else {
+            console.log('WebSocket no está inicializado');
+        }
+    }
+    const format = (inputValue) => {
+        let formattedValue = '';
+        let blockCount = 0;
+        let currentBlock = '';
+    
+        for (let i = 0; i < inputValue.length; i++) {
+            const char = inputValue[i];
+            
+            if (char === '.') {
+                if (blockCount < 3) {
+                    formattedValue += currentBlock + '.';
+                    currentBlock = '';
+                    blockCount++;
+                }
+            } else if (char >= '0' && char <= '9') {
+                if (currentBlock.length < 3) {
+                    currentBlock += char;
+                }
+            }
+        }
+    
+        formattedValue += currentBlock; // Agregar el último bloque sin punto
+
+        return formattedValue;
+    };
 
 
+    const handleStaticWifiIPChange = (e) => {
+        const inputValue = e.target.value.replace(/[^\d.]/g, ''); // Eliminar caracteres que no sean dígitos o puntos
+        const formattedValue = format(inputValue);
+        setStaticWifiIP(formattedValue);
+    };
+
+    const handleStaticSubnetMaskChange = (e) => {
+        const inputValue = e.target.value.replace(/[^\d.]/g, ''); // Eliminar caracteres que no sean dígitos o puntos
+        const formattedValue = format(inputValue);
+        setStaticSubnetMask(formattedValue);
+    }
+
+    const handleStaticGatewayChange = (e) => {
+        const inputValue = e.target.value.replace(/[^\d.]/g, ''); // Eliminar caracteres que no sean dígitos o puntos
+        const formattedValue = format(inputValue);
+        setStaticGateway(formattedValue);
+    }
+    
+   
+    
     return (
         <>
             {/* Elemento de carga condicional */}
@@ -141,30 +236,34 @@ const Config = () => {
                         <Col>
                             <h2>Configuración</h2>
                         </Col>
-                        <Col className="d-flex justify-content-end align-items-center">
-                            <Button variant="primary">Guardar</Button>
-                        </Col>
+
                     </Row>
 
                     {/* Sección de Configuración WiFi */}
                     <Row>
                         <Col md={6}>
                             <Card className="mb-3">
-                                <Card.Header>
+                                <Card.Header className="d-flex flex-row justify-content-between align-items-center">
                                     <h5 className="mb-0">Configuración WiFi</h5>
                                     <Form.Switch className="float-end" checked={wifiEnabled} onChange={(e) => setWifiEnabled(e.target.checked)} />
                                 </Card.Header>
-                                <Card.Body>
+                                <Card.Body hidden={!wifiEnabled}>
                                     <Form.Group as={Row} className="mb-3">
                                         <Form.Label column sm={3}>Red WiFi:</Form.Label>
                                         <div className="d-flex flex-row align-items-center">
-                                            <Form.Select value={selectedNetwork} onChange={(e) => setSelectedNetwork(e.target.value)} disabled={!wifiEnabled}>
+                                            <Form.Select value={selectedNetwork} onChange={(e) => setSelectedNetwork(e.target.value)} >
                                                 <option value="">Selecciona una red</option>
                                                 {networks.map((network, index) => (
                                                     <option key={index} value={network}>{network}</option>
                                                 ))}
                                             </Form.Select>
-                                            <Button onClick={handleGetNetworks} disabled={!wifiEnabled} className="ms-2"><BsSearchHeart /></Button>
+                                            <Button onClick={handleGetNetworks} className="ms-2">
+                                                {isLoadingSearchNetworks ?
+                                                    <Spinner animation="border" size="sm" /> :
+                                                    <BsSearchHeart />
+                                                }
+                                            </Button>
+
                                         </div>
                                     </Form.Group>
 
@@ -173,61 +272,80 @@ const Config = () => {
                                     <Form.Group as={Row} className="mb-3">
                                         <Form.Label column sm={3}>Contraseña:</Form.Label>
                                         <div className="d-flex flex-row align-items-center">
-                                            <Form.Control type={showWifiPassword ? "text" : "password"} value={wifiPassword} onChange={(e) => setWifiPassword(e.target.value)} disabled={!wifiEnabled} />
-                                            <Button className="ms-2" onClick={() => setShowWifiPassword(!showWifiPassword)}>{showWifiPassword ? <BsEyeSlash /> : <BsEye/>}</Button>
+                                            <Form.Control type={showWifiPassword ? "text" : "password"} value={wifiPassword} onChange={(e) => setWifiPassword(e.target.value)} />
+                                            <Button className="ms-2" onClick={() => setShowWifiPassword(!showWifiPassword)}>{showWifiPassword ? <BsEyeSlash /> : <BsEye />}</Button>
                                         </div>
                                     </Form.Group>
-                                    <Form.Group as={Row} className="mb-3">
-                                        <Form.Label column sm={3}>IP Estática:</Form.Label>
-                                        <Col sm={9}>
-                                            <Form.Switch checked={staticIPEnabled} onChange={(e) => setStaticIPEnabled(e.target.checked)} disabled={!wifiEnabled} required />
-                                        </Col>
-                                    </Form.Group>
+                                    <Button variant="primary" onClick={() => setConfigWifi()} className="d-flex align-items-center"> <FaUpload className="me-1" /> Cargar</Button>
+                                </Card.Body>
+                                <Card.Header className="d-flex flex-row justify-content-between align-items-center">
+                                    <h5 className="mb-0">IP Estática:</h5>
+                                    <Form.Switch checked={staticIPEnabled} onChange={(e) => setStaticIPEnabled(e.target.checked)} required />
+
+                                </Card.Header>
+                                <Card.Body hidden={!staticIPEnabled}>
+
                                     <Form.Group as={Row} className="mb-3">
                                         <Form.Label column sm={3}>Dirección IP:</Form.Label>
                                         <Col sm={9}>
-                                            <Form.Control type="text" value={staticWifiIP} onChange={(e) => setStaticWifiIP(e.target.value)} disabled={!wifiEnabled || !staticIPEnabled} required/>
+                                            <Form.Control
+                                                type="text"
+                                                value={staticWifiIP}
+                                                onChange={handleStaticWifiIPChange}
+                                                required={staticIPEnabled}
+                                            />
                                         </Col>
                                     </Form.Group>
                                     <Form.Group as={Row} className="mb-3">
                                         <Form.Label column sm={3}>Máscara de Subred:</Form.Label>
                                         <Col sm={9}>
-                                            <Form.Control type="text" value={staticSubnetMask} onChange={(e) => setStaticSubnetMask(e.target.value)} disabled={!wifiEnabled || !staticIPEnabled} required/>
+                                            <Form.Control
+                                                type="text"
+                                                value={staticSubnetMask}
+                                                onChange={handleStaticSubnetMaskChange}
+                                                required={staticIPEnabled}
+                                            />
                                         </Col>
                                     </Form.Group>
                                     <Form.Group as={Row} className="mb-3">
                                         <Form.Label column sm={3}>Puerta de Enlace:</Form.Label>
                                         <Col sm={9}>
-                                            <Form.Control type="text" value={staticGateway} onChange={(e) => setStaticGateway(e.target.value)} disabled={!wifiEnabled || !staticIPEnabled} required/>
+                                            <Form.Control
+                                                type="text"
+                                                value={staticGateway}
+                                                onChange={handleStaticGatewayChange}
+                                                required={staticIPEnabled}
+                                            />
                                         </Col>
                                     </Form.Group>
 
-                                    <Button variant="primary" onClick={() => setConfigStaticIP()} disabled={!wifiEnabled}>Configurar</Button>
+                                    <Button variant="primary" onClick={() => setConfigStaticIP()} disabled={!wifiEnabled} className="d-flex align-items-center"> <FaUpload className="me-1" /> Cargar</Button>
                                 </Card.Body>
                             </Card>
                         </Col>
                         <Col md={6}>
                             {/* Sección de Configuración AP */}
                             <Card className="mb-3">
-                                <Card.Header>
+                                <Card.Header className="d-flex flex-row justify-content-between align-items-center">
                                     <h5 className="mb-0">Modo AP</h5>
                                     <Form.Switch className="float-end" checked={apEnabled} onChange={(e) => setApEnabled(e.target.checked)} />
                                 </Card.Header>
-                                <Card.Body>
+                                <Card.Body hidden={!apEnabled}>
                                     <Form.Group as={Row} className="mb-3">
-                                        <Form.Label column sm={3}>Nombre del AP:</Form.Label>
+                                        <Form.Label column sm={3}>SSID:</Form.Label>
                                         <Col sm={9}>
-                                            <Form.Control type="text" value={apName} onChange={(e) => setApName(e.target.value)} disabled={!apEnabled} />
+                                            <Form.Control type="text" value={apName} onChange={(e) => setApName(e.target.value)} />
                                         </Col>
                                     </Form.Group>
-                                    <Form.Group as={Row} >
-                                        <Form.Label column sm={3}>Contraseña del AP:</Form.Label>
+                                    <Form.Group as={Row} className="mb-3" >
+                                        <Form.Label column sm={3}>Contraseña:</Form.Label>
                                         <div className="d-flex flex-row align-items-center">
-                                            <Form.Control type={showApPassword ? "text" : "password"} value={apPassword} onChange={(e) => setApPassword(e.target.value)} disabled={!apEnabled} />
-                                    
-                                            <Button className="ms-2" onClick={() => setShowApPassword(!showApPassword)}>{showApPassword ? <BsEyeSlash /> : <BsEye/>}</Button>
+                                            <Form.Control type={showApPassword ? "text" : "password"} value={apPassword} onChange={(e) => setApPassword(e.target.value)} />
+
+                                            <Button className="ms-2" onClick={() => setShowApPassword(!showApPassword)}>{showApPassword ? <BsEyeSlash /> : <BsEye />}</Button>
                                         </div>
                                     </Form.Group>
+                                    <Button variant="primary" onClick={() => setAPConfig()} className="d-flex align-items-center"> <FaUpload className="me-1" /> Cargar</Button>
                                 </Card.Body>
                             </Card>
                         </Col>
@@ -236,7 +354,7 @@ const Config = () => {
                         {/* Agrega aquí la sección de configuración de los relés */}
                         <Col md={6}>
                             <Card className="mb-3">
-                                <Card.Header>
+                                <Card.Header className="d-flex flex-row justify-content-between align-items-center">
                                     <h5 className="mb-0">K1</h5>
                                     <Form.Switch className="float-end" checked={K1Enabled} onChange={(e) => setK1Enabled(e.target.checked)} />
                                 </Card.Header>
@@ -258,14 +376,14 @@ const Config = () => {
                                             </Form.Select>
                                         </Col>
                                     </Form.Group>
-                                    {/* Agrega aquí los otros campos de configuración específicos del relé 1 */}
+                                    <Button variant="primary" onClick={() => setRelayConfig(1)} className="d-flex align-items-center"> <FaUpload className="me-1" /> Cargar</Button>
                                 </Card.Body>
                             </Card>
                         </Col>
 
                         <Col md={6}>
                             <Card className="mb-3">
-                                <Card.Header>
+                                <Card.Header className="d-flex flex-row justify-content-between align-items-center">
                                     <h5 className="mb-0">K2</h5>
                                     <Form.Switch className="float-end" checked={K2Enabled} onChange={(e) => setK2Enabled(e.target.checked)} />
                                 </Card.Header>
@@ -287,14 +405,14 @@ const Config = () => {
                                             </Form.Select>
                                         </Col>
                                     </Form.Group>
-                                    {/* Agrega aquí los otros campos de configuración específicos del relé 2 */}
+                                    <Button variant="primary" onClick={() => setRelayConfig(2)} className="d-flex align-items-center"> <FaUpload className="me-1" /> Cargar</Button>
                                 </Card.Body>
                             </Card>
                         </Col>
 
                         <Col md={6}>
                             <Card className="mb-3">
-                                <Card.Header>
+                                <Card.Header className="d-flex flex-row justify-content-between align-items-center">
                                     <h5 className="mb-0">K3</h5>
                                     <Form.Switch className="float-end" checked={K3Enabled} onChange={(e) => setK3Enabled(e.target.checked)} />
                                 </Card.Header>
@@ -316,14 +434,14 @@ const Config = () => {
                                             </Form.Select>
                                         </Col>
                                     </Form.Group>
-                                    {/* Agrega aquí los otros campos de configuración específicos del relé 3 */}
+                                    <Button variant="primary" onClick={() => setRelayConfig(3)} className="d-flex align-items-center"> <FaUpload className="me-1" /> Cargar</Button>
                                 </Card.Body>
                             </Card>
                         </Col>
 
                         <Col md={6}>
                             <Card className="mb-3">
-                                <Card.Header>
+                                <Card.Header className="d-flex flex-row justify-content-between align-items-center">
                                     <h5 className="mb-0">K4</h5>
                                     <Form.Switch className="float-end" checked={K4Enabled} onChange={(e) => setK4Enabled(e.target.checked)} />
                                 </Card.Header>
@@ -345,7 +463,7 @@ const Config = () => {
                                             </Form.Select>
                                         </Col>
                                     </Form.Group>
-
+                                    <Button variant="primary" onClick={() => setRelayConfig(4)} className="d-flex align-items-center"> <FaUpload className="me-1" /> Cargar</Button>
                                 </Card.Body>
                             </Card>
                         </Col>
