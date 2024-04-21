@@ -1,12 +1,13 @@
 {
   "Wifi": {
-      "active": true,
-      "ssid": "Tarta-D",
-      "password": "OliviaPampo2024...",
-      "staticIp": true,
-      "ip": "192.168.1.100",
-      "subnet": "255.255.255.0",
-      "gateway": "192.168.1.1"
+      "active": false,
+      "status": false,
+      "ssid": "",
+      "password": "",
+      "staticIp": false,
+      "ip": "",
+      "subnet": "",
+      "gateway": ""
   },
   "MQTT": {
       "active": true,
@@ -23,12 +24,13 @@
   },
   "AP": {
       "active": true,
+      "status": true,
       "ssid": "BaBuIoT",
       "password": "12345678"
   },
   "K1": {
-      "active": true,
-      "mode": "Modo1",
+      "active": false,
+      "mode": "1",
       "name": "Dispositivo1",
       "state": true,
       "timer": 60,
@@ -36,8 +38,8 @@
       "deactivationTime": 7200
   },
   "K2": {
-      "active": true,
-      "mode": "Modo2",
+      "active": false,
+      "mode": "1",
       "name": "Dispositivo2",
       "state": false,
       "timer": 60,
@@ -45,8 +47,8 @@
       "deactivationTime": 7200
   },
   "K3": {
-      "active": true,
-      "mode": "Modo3",
+      "active": false,
+      "mode": "1",
       "name": "Dispositivo3",
       "state": true,
       "timer": 60,
@@ -54,8 +56,8 @@
       "deactivationTime": 7200
   },
   "K4": {
-      "active": true,
-      "mode": "Modo4",
+      "active": false,
+      "mode": "1",
       "name": "Dispositivo4",
       "state": false,
       "timer": 60,

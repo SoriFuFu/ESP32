@@ -14,13 +14,24 @@ public:
         WiFi.begin(ssid, password);
         Serial.print("Conectando a WiFi ");
         Serial.print(ssid);
+        int attempts = 0;
         while (WiFi.status() != WL_CONNECTED)
         {
             delay(500);
             Serial.print(".");
+            attempts++;
+            if (attempts > 40)
+            {
+                Serial.println("No se pudo conectar al WiFi");
+                break;
+            }
         }
-        Serial.println("");
-        Serial.println("WiFi conectado");
+        if (WiFi.status() == WL_CONNECTED)
+        {
+            Serial.println("");
+            Serial.println("WiFi conectado");
+        }
+
     }
 
     // Método para inicializar un punto de acceso (AP) con un SSID y contraseña
@@ -40,6 +51,7 @@ public:
     {
         initWifi(ssid, password);   // Conexión al WiFi
         initAP(apSsid, apPassword); // Inicialización del punto de acceso
+
     }
 
     // Método para buscar y listar redes WiFi disponibles
@@ -63,7 +75,7 @@ public:
     void configStaticIp(IPAddress ip, IPAddress gateway, IPAddress subnet)
     {
         WiFi.config(ip, gateway, subnet);
-        Serial.println("Static IP configured");
+        Serial.println("IP estática configurada");
     }
 
     // Método para obtener el SSID de la red WiFi a la que está conectado el dispositivo
@@ -86,7 +98,7 @@ public:
     }
 
     // Método para obtener la dirección Subnet del dispositivo
-    IPAddress getSubnetIP()
+    IPAddress getSubnetMask()
     {
         return WiFi.subnetMask();
     }
@@ -110,32 +122,26 @@ public:
     }
 
     // Método para desconectar el dispositivo del WiFi
-    void disconnect()
+    void disconnectWifi()
     {
         WiFi.disconnect();
-        Serial.println("WiFi disconnected");
+        Serial.println("WiFi desconectado");
     }
 
     // Método para desconectar el dispositivo del punto de acceso (AP)
     void stopAP()
     {
         WiFi.softAPdisconnect(true);
-        Serial.println("Access Point stopped");
+        Serial.println("AP Desconectada");
     }
 
     // Método para reiniciar la conexión WiFi
     void reconnect()
     {
         WiFi.reconnect();
-        Serial.println("WiFi reconnected");
+        Serial.println("WiFi reconectado");
     }
 
-    // Método para reiniciar el punto de acceso (AP)
-    void restartAP()
-    {
-        WiFi.softAPdisconnect(true);
-        Serial.println("Access Point restarted");
-    }
 
     void configWifiDHCP()
     {
@@ -146,6 +152,17 @@ public:
         Serial.print("IP: ");
         Serial.println(ipAddress);
         ESP.restart();
+    }
+    bool verifyConnection()
+    {
+        if (WiFi.status() == WL_CONNECTED)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 };
 

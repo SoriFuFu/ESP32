@@ -57,6 +57,16 @@ public:
 
   void setWifiActive(bool active) {
     configDoc["Wifi"]["active"] = active;
+    saveConfig();
+  }
+
+  bool getWifiStatus() {
+    return configDoc["Wifi"]["status"];
+  }
+
+  void setWifiStatus(bool status) {
+    configDoc["Wifi"]["status"] = status;
+    saveConfig();
   }
 
   String getWifiSSID() {
@@ -65,6 +75,7 @@ public:
 
   void setWifiSSID(String ssid) {
     configDoc["Wifi"]["ssid"] = ssid;
+    saveConfig();
   }
 
   String getWifiPassword() {
@@ -73,6 +84,7 @@ public:
 
   void setWifiPassword(String password) {
     configDoc["Wifi"]["password"] = password;
+    saveConfig();
   }
 
   bool getWifiStaticIp() {
@@ -125,7 +137,7 @@ public:
   }
 
   void setWifiGateway(String gateway) {
-    configDoc["Wifi"]["Gateway"] = gateway;
+    configDoc["Wifi"]["gateway"] = gateway;
     saveConfig();
   }
 
@@ -133,7 +145,20 @@ public:
     return configDoc["AP"]["active"];
   }
   void setApActive(bool active) {
-    configDoc["AP"]["active"] = active;
+   if (active) {
+      configDoc["AP"]["active"] = true;
+    } else {
+      configDoc["AP"]["active"] = false;
+    }
+    saveConfig();
+  }
+
+  bool getApStatus() {
+    return configDoc["AP"]["status"];
+  }
+  void setApStatus(bool status) {
+    configDoc["AP"]["status"] = status;
+    saveConfig();
   }
 
   // Métodos para obtener y actualizar valores AP
@@ -142,6 +167,7 @@ public:
   }
   void setApSSID(String ssid) {
     configDoc["AP"]["ssid"] = ssid;
+    saveConfig();
   }
 
   String getApPassword() {
@@ -149,6 +175,7 @@ public:
   }
   void setApPassword(String password) {
     configDoc["AP"]["password"] = password;
+    saveConfig();
   }
 
   // Métodos para obtener y actualizar valores de K1
@@ -158,6 +185,7 @@ public:
 
   void setK1Active(bool active) {
     configDoc["K1"]["active"] = active;
+    saveConfig();
   }
 
   String getK1Mode() {
@@ -166,6 +194,7 @@ public:
 
   void setK1Mode(String mode) {
     configDoc["K1"]["mode"] = mode;
+    saveConfig();
   }
 
   String getK1Name() {
@@ -174,6 +203,7 @@ public:
 
   void setK1Name(String name) {
     configDoc["K1"]["name"] = name;
+    saveConfig();
   }
 
   bool getK1State() {
@@ -181,12 +211,14 @@ public:
   }
   void setK1State(bool state) {
     configDoc["K1"]["state"] = state;
+    saveConfig();
   }
   unsigned long getK1Timer() {
     return configDoc["K1"]["timer"];
   }
   void setK1Timer(int timer) {
     configDoc["K1"]["timer"] = timer;
+    saveConfig();
   }
 
   unsigned long getK1ActivationTime() {
@@ -195,6 +227,7 @@ public:
 
   void setK1ActivationTime(unsigned long activationTime) {
     configDoc["K1"]["activationTime"] = activationTime;
+    saveConfig();
   }
 
   unsigned long getK1DeactivationTime() {
@@ -203,6 +236,190 @@ public:
 
   void setK1DeactivationTime(unsigned long deactivationTime) {
     configDoc["K1"]["deactivationTime"] = deactivationTime;
+    saveConfig();
+  }
+
+    // Métodos para obtener y actualizar valores de K2
+  bool getK2Active() {
+    return configDoc["K2"]["active"];
+  }
+
+  void setK2Active(bool active) {
+    configDoc["K2"]["active"] = active;
+    saveConfig();
+  }
+
+  String getK2Mode() {
+    return configDoc["K2"]["mode"].as<String>();
+  }
+
+  void setK2Mode(String mode) {
+    configDoc["K2"]["mode"] = mode;
+    saveConfig();
+  }
+
+  String getK2Name() {
+    return configDoc["K2"]["name"].as<String>();
+  }
+
+  void setK2Name(String name) {
+    configDoc["K2"]["name"] = name;
+    saveConfig();
+  }
+
+  bool getK2State() {
+    return configDoc["K2"]["state"];
+  }
+  void setK2State(bool state) {
+    configDoc["K2"]["state"] = state;
+    saveConfig();
+  }
+  unsigned long getK2Timer() {
+    return configDoc["K2"]["timer"];
+  }
+  void setK2Timer(int timer) {
+    configDoc["K2"]["timer"] = timer;
+    saveConfig();
+  }
+
+  unsigned long getK2ActivationTime() {
+    return configDoc["K2"]["activationTime"];
+  }
+
+  void setK2ActivationTime(unsigned long activationTime) {
+    configDoc["K2"]["activationTime"] = activationTime;
+    saveConfig();
+  }
+
+  unsigned long getK2DeactivationTime() {
+    return configDoc["K2"]["deactivationTime"];
+  }
+
+  void setK2DeactivationTime(unsigned long deactivationTime) {
+    configDoc["K2"]["deactivationTime"] = deactivationTime;
+    saveConfig();
+  }
+
+    // Métodos para obtener y actualizar valores de K3
+  bool getK3Active() {
+    return configDoc["K3"]["active"];
+  }
+
+  void setK3Active(bool active) {
+    configDoc["K3"]["active"] = active;
+    saveConfig();
+  }
+
+  String getK3Mode() {
+    return configDoc["K3"]["mode"].as<String>();
+  }
+
+  void setK3Mode(String mode) {
+    configDoc["K3"]["mode"] = mode;
+    saveConfig();
+  }
+
+  String getK3Name() {
+    return configDoc["K3"]["name"].as<String>();
+  }
+
+  void setK3Name(String name) {
+    configDoc["K3"]["name"] = name;
+    saveConfig();
+  }
+
+  bool getK3State() {
+    return configDoc["K3"]["state"];
+  }
+  void setK3State(bool state) {
+    configDoc["K3"]["state"] = state;
+    saveConfig();
+  }
+  unsigned long getK3Timer() {
+    return configDoc["K3"]["timer"];
+  }
+  void setK3Timer(int timer) {
+    configDoc["K3"]["timer"] = timer;
+    saveConfig();
+  }
+
+  unsigned long getK3ActivationTime() {
+    return configDoc["K3"]["activationTime"];
+  }
+
+  void setK3ActivationTime(unsigned long activationTime) {
+    configDoc["K3"]["activationTime"] = activationTime;
+    saveConfig();
+  }
+
+  unsigned long getK3DeactivationTime() {
+    return configDoc["K3"]["deactivationTime"];
+  }
+
+  void setK3DeactivationTime(unsigned long deactivationTime) {
+    configDoc["K3"]["deactivationTime"] = deactivationTime;
+    saveConfig();
+  }
+  
+    // Métodos para obtener y actualizar valores de K4
+  bool getK4Active() {
+    return configDoc["K4"]["active"];
+  }
+
+  void setK4Active(bool active) {
+    configDoc["K4"]["active"] = active;
+    saveConfig();
+  }
+
+  String getK4Mode() {
+    return configDoc["K4"]["mode"].as<String>();
+  }
+
+  void setK4Mode(String mode) {
+    configDoc["K4"]["mode"] = mode;
+    saveConfig();
+  }
+
+  String getK4Name() {
+    return configDoc["K4"]["name"].as<String>();
+  }
+
+  void setK4Name(String name) {
+    configDoc["K4"]["name"] = name;
+    saveConfig();
+  }
+
+  bool getK4State() {
+    return configDoc["K4"]["state"];
+  }
+  void setK4State(bool state) {
+    configDoc["K4"]["state"] = state;
+    saveConfig();
+  }
+  unsigned long getK4Timer() {
+    return configDoc["K4"]["timer"];
+  }
+  void setK4Timer(int timer) {
+    configDoc["K4"]["timer"] = timer;
+    saveConfig();
+  }
+
+  unsigned long getK4ActivationTime() {
+    return configDoc["K4"]["activationTime"];
+  }
+
+  void setK4ActivationTime(unsigned long activationTime) {
+    configDoc["K4"]["activationTime"] = activationTime;
+    saveConfig();
+  }
+
+  unsigned long getK4DeactivationTime() {
+    return configDoc["K4"]["deactivationTime"];
+  }
+
+  void setK4DeactivationTime(unsigned long deactivationTime) {
+    configDoc["K4"]["deactivationTime"] = deactivationTime;
+    saveConfig();
   }
 };
 
