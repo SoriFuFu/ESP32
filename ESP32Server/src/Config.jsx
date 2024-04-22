@@ -47,8 +47,8 @@ const Config = () => {
     const [clientStart, setClientStart] = useState(false);
 
     useEffect(() => {
-        // const ws = new WebSocket('ws://192.168.1.37:81');
-        const ws = new WebSocket('ws://192.168.4.1:81');
+        const ws = new WebSocket('ws://192.168.0.101:81');
+        // const ws = new WebSocket('ws://192.168.4.1:81');
         // const ws = new WebSocket('ws://' + window.location.hostname + ':81');
         setWebSocket(ws);
 
@@ -61,7 +61,6 @@ const Config = () => {
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             setWifiEnabled(data.Wifi.active);
-            console.log("Configuración cargada "+wifiEnabled);
             setStaticIPEnabled(data.Wifi.staticIp);
             setWifiSSID(data.Wifi.ssid);
             setWifiPassword(data.Wifi.password);
@@ -268,15 +267,20 @@ const Config = () => {
     const setRelayConfig = (relay) => {
         if (webSocket) {
             if (relay === 1) {
-                let message = { action: 'setRelayConfig', relay: relay, active: true, name: K1Name + relay, mode: K1Mode };
+                console.log('K1');
+                let message = { action: 'setRelayConfig', relay: relay, K1Active: true, relayName: K1Name, relayMode: K1Mode };
+                webSocket.send(JSON.stringify(message));
             } else if (relay === 2) {
-                let message = { action: 'setRelayConfig', relay: relay, active: true, name: K2Name + relay, mode: K2Mode };
+                let message = { action: 'setRelayConfig', relay: relay, K2Active: true, relayName: K2Name, relayMode: K2Mode };
+                webSocket.send(JSON.stringify(message));
             } else if (relay === 3) {
-                let message = { action: 'setRelayConfig', relay: relay, active: true, name: K3Name + relay, mode: K3Mode };
+                let message = { action: 'setRelayConfig', relay: relay, K3Active: true, relayName: K3Name, relayMode: K3Mode };
+                webSocket.send(JSON.stringify(message));
             } else if (relay === 4) {
-                let message = { action: 'setRelayConfig', relay: relay, active: true, name: K4Name + relay, mode: K4Mode };
+                let message = { action: 'setRelayConfig', relay: relay, K4Active: true, relayName: K4Name, relayMode: K4Mode };
+                webSocket.send(JSON.stringify(message));
             }
-            webSocket.send(JSON.stringify(message));
+            
         } else {
             console.log('WebSocket no está inicializado');
         }
@@ -475,13 +479,13 @@ const Config = () => {
                                     <Form.Group as={Row} className="mb-3">
                                         <Form.Label column sm={3}>Nombre</Form.Label>
                                         <Col sm={9}>
-                                            <Form.Control type="text" value={K1Name} disabled={!K1Enabled} />
+                                        <Form.Control type="text" value={K1Name} onChange={(e) => setK1Name(e.target.value)} />
                                         </Col>
                                     </Form.Group>
                                     <Form.Group as={Row} className="mb-3">
                                         <Form.Label column sm={3}>Modo de funcionamieno</Form.Label>
                                         <Col sm={9}>
-                                            <Form.Select disabled={!K1Enabled}>
+                                            <Form.Select >
                                                 <option value="1">Temporizador regresivo</option>
                                                 <option value="2">Programación diaria</option>
                                                 <option value="3">Enclavamiento</option>

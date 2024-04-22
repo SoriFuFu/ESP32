@@ -1,67 +1,69 @@
 {
-  "Wifi": {
-      "active": false,
-      "status": false,
-      "ssid": "",
-      "password": "",
-      "staticIp": false,
-      "ip": "",
-      "subnet": "",
-      "gateway": ""
-  },
-  "MQTT": {
-      "active": true,
-      "server": " ",
-      "port": 1883,
-      "user": "MiUsuarioMQTT",
-      "password": "MiContraseñaMQTT",
-      "topic": "MiTemaMQTT"
-  },
-  "NTP": {
-      "active": true,
-      "server": "pool.ntp.org",
-      "timezone": 3600
-  },
-  "AP": {
-      "active": true,
-      "status": true,
-      "ssid": "BaBuIoT",
-      "password": "12345678"
-  },
-  "K1": {
-      "active": false,
-      "mode": "1",
-      "name": "Dispositivo1",
-      "state": true,
-      "timer": 60,
-      "activationTime": 3600,
-      "deactivationTime": 7200
-  },
-  "K2": {
-      "active": false,
-      "mode": "1",
-      "name": "Dispositivo2",
-      "state": false,
-      "timer": 60,
-      "activationTime": 3600,
-      "deactivationTime": 7200
-  },
-  "K3": {
-      "active": false,
-      "mode": "1",
-      "name": "Dispositivo3",
-      "state": true,
-      "timer": 60,
-      "activationTime": 3600,
-      "deactivationTime": 7200
-  },
-  "K4": {
-      "active": false,
-      "mode": "1",
-      "name": "Dispositivo4",
-      "state": false,
-      "timer": 60,
-      "activationTime": 3600,
-      "deactivationTime": 7200
-  }
+    "Wifi": {
+        "active": false,
+        "status": false,
+        "ssid": "",
+        "password": "",
+        "staticIp": false,
+        "ip": "",
+        "subnet": "",
+        "gateway": ""
+    },
+    "MQTT": {
+        "active": true,
+        "server": " ",
+        "port": 1883,
+        "user": "MiUsuarioMQTT",
+        "password": "MiContraseñaMQTT",
+        "topic": "MiTemaMQTT"
+    },
+    "NTP": {
+        "active": true,
+        "server": "pool.ntp.org",
+        "timezone": 3600
+    },
+    "AP": {
+        "active": true,
+        "status": true,
+        "ssid": "BaBuIoT",
+        "password": "12345678"
+    },
+    "Relay": {
+        "K1": {
+            "active": false,
+            "mode": "1",
+            "name": "Dispositivo1",
+            "state": true,
+            "timer": 60,
+            "activationTime": 3600,
+            "deactivationTime": 7200
+        },
+        "K2": {
+            "active": false,
+            "mode": "1",
+            "name": "Dispositivo2",
+            "state": false,
+            "timer": 60,
+            "activationTime": 3600,
+            "deactivationTime": 7200
+        },
+        "K3": {
+            "active": false,
+            "mode": "1",
+            "name": "Dispositivo3",
+            "state": true,
+            "timer": 60,
+            "activationTime": 3600,
+            "deactivationTime": 7200
+        },
+        "K4": {
+            "active": false,
+            "mode": "1",
+            "name": "Dispositivo4",
+            "state": false,
+            "timer": 60,
+            "activationTime": 3600,
+            "deactivationTime": 7200
+        }
+    }
 }

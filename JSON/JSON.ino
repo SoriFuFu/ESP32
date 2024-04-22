@@ -240,94 +240,93 @@ void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t l
     }
 
     //****CONFIGURACIÓN RELÉS****//
-    if (action == "setK1Config") // Configurar K1
+    if (action == "setRelayConfig") // Configurar relés
     {
-      bool K1Active = data["K1Active"];
-      bool getK1Active = config.getK1Active();
-      if (K1Active && !getK1Active)
+      String relay = data["relay"];
+
+      if (relay == "1")
       {
-        String K1Name = data["K1Name"];
-        String K1Mode = data["K1Mode"];
-        config.setK1Active(K1Active);
-        config.setK1Name(K1Name);
-        config.setK1Mode(K1Mode);
-        sendMessage("true");
+        bool K1Active = data["K1Active"];
+        bool getK1Active = config.getK1Active();
+        if (K1Active && !getK1Active)
+        {
+          String relayName = data["relayName"];
+          String relayMode = data["relayMode"];
+          config.setK1Active(true);
+          config.setK1Name(relayName);
+          config.setK1Mode(relayMode);
+        }
+        else if (!K1Active && getK1Active)
+        {
+          config.setK1Active(false);
+          config.setK1Name("");
+          config.setK1Mode("");
+        }
       }
-      else if (!K1Active && getK1Active)
-      {
-        config.setK1Active(false);
-        config.setK1Name("Dispositivo 1");
-        config.setK1Mode("0");
-        sendMessage("false");
+      else if (relay == "2"){
+        bool K2Active = data["K2Active"];
+        bool getK2Active = config.getK2Active();
+        if (K2Active && !getK2Active)
+        {
+          String relayName = data["relayName"];
+          String relayMode = data["relayMode"];
+          config.setK2Active(true);
+          config.setK2Name(relayName);
+          config.setK2Mode(relayMode);
+        }
+        else if (!K2Active && getK2Active)
+        {
+          config.setK2Active(false);
+          config.setK2Name("");
+          config.setK2Mode("");
+        }
       }
-      updateClientConfig();
+      else if (relay == "3"){
+        bool K3Active = data["K3Active"];
+        bool getK3Active = config.getK3Active();
+        if (K3Active && !getK3Active)
+        {
+          String relayName = data["relayName"];
+          String relayMode = data["relayMode"];
+          config.setK3Active(true);
+          config.setK3Name(relayName);
+          config.setK3Mode(relayMode);
+        }
+        else if (!K3Active && getK3Active)
+        {
+          config.setK3Active(false);
+          config.setK3Name("");
+          config.setK3Mode("");
+        }
+      }
+      else if (relay == "4"){
+        bool K4Active = data["K4Active"];
+        bool getK4Active = config.getK4Active();
+        if (K4Active && !getK4Active)
+        {
+          String relayName = data["relayName"];
+          String relayMode = data["relayMode"];
+          config.setK4Active(true);
+          config.setK4Name(relayName);
+          config.setK4Mode(relayMode);
+        }
+        else if (!K4Active && getK4Active)
+        {
+          config.setK4Active(false);
+          config.setK4Name("");
+          config.setK4Mode("");
+        }
+      }
+     
     }
-    else if (action == "setK2Config") // Configurar K2
-    {
-      bool K2Active = data["K2Active"];
-      bool getK2Active = config.getK2Active();
-      if (K2Active && !getK2Active)
-      {
-        String K2Name = data["K2Name"];
-        String K2Mode = data["K2Mode"];
-        config.setK2Active(K2Active);
-        config.setK2Name(K2Name);
-        config.setK2Mode(K2Mode);
-        sendMessage("true");
-      }
-      else if (!K2Active && getK2Active)
-      {
-        config.setK2Active(false);
-        config.setK2Name("Dispositivo 2");
-        config.setK2Mode("0");
-        sendMessage("false");
-      }
-      updateClientConfig();
-    }
-    else if (action == "setK3Config") // Configurar K3
-    {
-      bool K3Active = data["K3Active"];
-      bool getK3Active = config.getK3Active();
-      if (K3Active && !getK3Active)
-      {
-        String K3Name = data["K3Name"];
-        String K3Mode = data["K3Mode"];
-        config.setK3Active(K3Active);
-        config.setK3Name(K3Name);
-        config.setK3Mode(K3Mode);
-        sendMessage("true");
-      }
-      else if (!K3Active && getK3Active)
-      {
-        config.setK3Active(false);
-        config.setK3Name("Dispositivo 3");
-        config.setK3Mode("0");
-        sendMessage("false");
-      }
-      updateClientConfig();
-    }
-    else if (action == "setK4Config") // Configurar K4
-    {
-      bool K4Active = data["K4Active"];
-      bool getK4Active = config.getK4Active();
-      if (K4Active && !getK4Active)
-      {
-        String K4Name = data["K4Name"];
-        String K4Mode = data["K4Mode"];
-        config.setK4Active(K4Active);
-        config.setK4Name(K4Name);
-        config.setK4Mode(K4Mode);
-        sendMessage("true");
-      }
-      else if (!K4Active && getK4Active)
-      {
-        config.setK4Active(false);
-        config.setK4Name("Dispositivo 4");
-        config.setK4Mode("0");
-        sendMessage("false");
-      }
-      updateClientConfig();
-    }
+  }
+  else if (type == WStype_CONNECTED)
+  {
+    Serial.println("Cliente conectado");
+  }
+  else if (type == WStype_DISCONNECTED)
+  {
+    Serial.println("Cliente desconectado");
   }
 }
 
