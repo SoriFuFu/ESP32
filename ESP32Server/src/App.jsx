@@ -15,6 +15,7 @@ const App = () => {
     const [apEnabled, setApEnabled] = useState(false);
     const [apConfig, setApConfig] = useState({});
     const [relay, setRelay] = useState({});
+    const [webSocket, setWebSocket] = useState(null);
     
 
     useEffect(() => {
@@ -22,7 +23,8 @@ const App = () => {
     }, []);
 
     const handleGetConfig = () => {
-        const ws = new WebSocket('ws://192.168.0.101:81');
+        const ws = new WebSocket('ws://192.168.1.40:81');
+        setWebSocket(ws);
         
         ws.onopen = () => {
             let message = { action: 'getConfig' };
@@ -64,7 +66,7 @@ const App = () => {
                         <Container fluid className="content">
                             <Routes>
                                 <Route path="/panel" element={<Panel Relay={relay} />} />
-                                <Route path="/config/*" element={<Config wifiConfig={wifiConfig} apConfig={apConfig} relay={relay} />} />
+                                <Route path="/config/*" element={<Config wifiConfig={wifiConfig} apConfig={apConfig} relay={relay} webSocket={webSocket} />} />
                                 
                                 <Route path="*" element={<Navigate to="/panel" replace />} />
                             </Routes>

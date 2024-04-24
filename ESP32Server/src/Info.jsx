@@ -22,16 +22,16 @@ const InfoConfig = ({ wifiConfig, apConfig, relay }) => {
                     <Card>
                         <Card.Body>
                             <Card.Title>Configuración de WiFi</Card.Title>
-                            <Card.Text>
-                                <p><strong>Estado:</strong> {renderStatus(wifiConfig.status)}</p>
-                                <p><strong>SSID:</strong> {wifiConfig.ssid}</p>
-                                <p><strong>Contraseña:</strong> {wifiConfig.password ? wifiConfig.password : 'Sin contraseña'}</p>
+                            
+                                <Card.Text><strong>Estado:</strong> {renderStatus(wifiConfig.status)}</Card.Text>
+                                <Card.Text><strong>SSID:</strong> {wifiConfig.ssid}</Card.Text>
+                                <Card.Text><strong>Contraseña:</strong> {wifiConfig.password ? wifiConfig.password : 'Sin contraseña'}</Card.Text>
 
-                                <p><strong>IP:</strong> {wifiConfig.ip}</p>
-                                <p><strong>Subred</strong> {wifiConfig.subnet}</p>
-                                <p><strong>Puerta de enlace:</strong> {wifiConfig.gateway}</p>
+                                <Card.Text><strong>IP:</strong> {wifiConfig.ip}</Card.Text>
+                                <Card.Text><strong>Subred</strong> {wifiConfig.subnet}</Card.Text>
+                                <Card.Text><strong>Puerta de enlace:</strong> {wifiConfig.gateway}</Card.Text>
                                 {/* Agrega más detalles de la configuración de WiFi aquí */}
-                            </Card.Text>
+                          
                         </Card.Body>
                     </Card>
                 </Col>
@@ -40,12 +40,12 @@ const InfoConfig = ({ wifiConfig, apConfig, relay }) => {
                     <Card>
                         <Card.Body>
                             <Card.Title>Configuración de AP</Card.Title>
-                            <Card.Text>
-                                <p><strong>Estado:</strong> {renderStatus(apConfig.status)}</p>
-                                <p><strong>SSID:</strong> {apConfig.ssid}</p>
-                                <p><strong>Contraseña:</strong> {apConfig.password}</p>
+                        
+                                <Card.Text><strong>Estado:</strong> {renderStatus(apConfig.status)}</Card.Text>
+                                <Card.Text><strong>SSID:</strong> {apConfig.ssid}</Card.Text>
+                                <Card.Text><strong>Contraseña:</strong> {apConfig.password}</Card.Text>
                                 {/* Agrega más detalles de la configuración de AP aquí */}
-                            </Card.Text>
+                            
                         </Card.Body>
                     </Card>
                 </Col>
@@ -58,11 +58,11 @@ const InfoConfig = ({ wifiConfig, apConfig, relay }) => {
                             <Card>
                                 <Card.Body>
                                     <Card.Title>Configuración de {key}</Card.Title>
-                                    <Card.Text>
-                                        <p><strong>Estado:</strong> {renderStatus(individualRelay.state)}</p>
-                                        <p><strong>Nombre: </strong> {individualRelay.name}</p>
+                                    
+                                        <Card.Text><strong>Estado:</strong> {renderStatus(individualRelay.state)}</Card.Text>
+                                        <Card.Text><strong>Nombre: </strong> {individualRelay.name}</Card.Text>
                                         {/* Agrega más detalles de la configuración de relé aquí */}
-                                    </Card.Text>
+                                   
                                 </Card.Body>
                             </Card>
                         </Col>
