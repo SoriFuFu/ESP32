@@ -1,3 +1,4 @@
+// App.jsx
 import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Spinner } from 'react-bootstrap';
@@ -9,25 +10,27 @@ import Config from './Config';
 
 const App = () => {
     const [isLoading, setIsLoading] = useState(true);
-    const [WifiConfig, setWifiConfig] = useState({});
+    const [wifiConfig, setWifiConfig] = useState({});
     const [wifiEnabled, setWifiEnabled] = useState(false);
     const [apEnabled, setApEnabled] = useState(false);
-    const [ApConfig, setApConfig] = useState({});
-    const [Relay, setRelay] = useState({});
+    const [apConfig, setApConfig] = useState({});
+    const [relay, setRelay] = useState({});
+    
+
     useEffect(() => {
+        handleGetConfig();
+    }, []);
+
+    const handleGetConfig = () => {
         const ws = new WebSocket('ws://192.168.0.101:81');
-        // const ws = new WebSocket('ws://192.168.4.1:81');
-        // const ws = new WebSocket('ws://' + window.location.hostname + ':81');
-       
+        
         ws.onopen = () => {
-            console.log('Conexión WebSocket establecida');
             let message = { action: 'getConfig' };
             ws.send(JSON.stringify(message));
         };
-
+        
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            console.log('Mensaje recibido:', data);
             setWifiConfig(data.Wifi);
             setWifiEnabled(data.Wifi.status);
             setApEnabled(data.AP.status);
@@ -36,44 +39,42 @@ const App = () => {
             setIsLoading(false);
         };
 
+        ws.onerror = (error) => {
+            console.error('Error en WebSocket:', error);
+        };
+
         ws.onclose = () => {
             console.log('Conexión WebSocket cerrada');
         };
+    };
 
-        return () => {
-            if (ws) {
-                ws.close();
-            }
-        };
-    }, []);
-
-      return (
+    return (
         <Router>
             <div>
-            {/* Elemento de carga condicional */}
-            {isLoading ? (
-                <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-                    <Spinner animation="border" role="status">
-                        <span className="visually-hidden">Cargando...</span>
-                    </Spinner>
-                </div>
-            ) : (
-                <>
-                <Menu wifiEnabled={wifiEnabled} apEnabled={apEnabled} />
-                <Container fluid className="content">
-                <Routes>
-                    <Route path="/panel" element={<Panel Relay = {Relay}/>} />
-                    <Route path="/config" element={<Config />} />
-                    {/* Redirige a la última ruta visitada almacenada en localStorage */}
-                    <Route path="*" element={<Navigate to="/panel" replace />} />
-                </Routes>
-                </Container>
-                </>
-            )}
-    
+                {/* Elemento de carga condicional */}
+                {isLoading ? (
+                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
+                        <Spinner animation="border" role="status">
+                            <span className="visually-hidden">Cargando...</span>
+                        </Spinner>
+                    </div>
+                ) : (
+                    <>
+                        <Menu wifiEnabled={wifiEnabled} apEnabled={apEnabled} />
+                        <Container fluid className="content">
+                            <Routes>
+                                <Route path="/panel" element={<Panel Relay={relay} />} />
+                                <Route path="/config/*" element={<Config wifiConfig={wifiConfig} apConfig={apConfig} relay={relay} />} />
+                                
+                                <Route path="*" element={<Navigate to="/panel" replace />} />
+                            </Routes>
+                        </Container>
+                    </>
+                )}
             </div>
         </Router>
     );
 }
 
 export default App;
+
