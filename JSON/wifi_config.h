@@ -9,29 +9,44 @@ public:
     WifiConfig() {}
 
     // Método para conectar al WiFi utilizando un SSID y contraseña
-    void initWifi(const char *ssid, const char *password)
+    void initWifi(const char *ssid, const char *password, IPAddress ip, IPAddress gateway, IPAddress subnet)
     {
+  
+        WiFi.config(ip, gateway, subnet);
         WiFi.begin(ssid, password);
+
         Serial.print("Conectando a WiFi ");
         Serial.print(ssid);
+
         int attempts = 0;
         while (WiFi.status() != WL_CONNECTED)
         {
             delay(500);
             Serial.print(".");
             attempts++;
+
             if (attempts > 40)
             {
                 Serial.println("No se pudo conectar al WiFi");
-                break;
+                // Intentar reconectar después de un pequeño retraso
+                delay(5000);
+                WiFi.begin(ssid, password);
+                attempts = 0; // Reiniciar el contador de intentos
             }
         }
+
         if (WiFi.status() == WL_CONNECTED)
         {
             Serial.println("");
             Serial.println("WiFi conectado");
+            Serial.println("IP estática configurada correctamente");
+            Serial.print("IP: ");
+            Serial.println(WiFi.localIP());
+            // Serial.print("Subnet: ");
+            // Serial.println(WiFi.subnetMask());
+            // Serial.print("Puerta de enlace: ");
+            // Serial.println(WiFi.gatewayIP());
         }
-
     }
 
     // Método para inicializar un punto de acceso (AP) con un SSID y contraseña
@@ -39,6 +54,8 @@ public:
     {
         WiFi.softAP(ssid, password);
         Serial.println("Punto de acceso iniciado");
+        Serial.print("IP: ");
+        Serial.println(WiFi.softAPIP());
     }
     void setApSSID(const char *ssid)
     {
@@ -47,11 +64,10 @@ public:
     }
 
     // Método para conectar al WiFi utilizando un SSID y contraseña y configurar un punto de acceso simultáneo
-    void initWifiPlus(const char *ssid, const char *password, const char *apSsid, const char *apPassword)
+    void initWifiPlus(const char *ssid, const char *password,IPAddress ip, IPAddress gateway, IPAddress subnet, const char *apSsid, const char *apPassword)
     {
-        initWifi(ssid, password);   // Conexión al WiFi
+        initWifi(ssid, password, ip, subnet, gateway);   // Conexión al WiFi
         initAP(apSsid, apPassword); // Inicialización del punto de acceso
-
     }
 
     // Método para buscar y listar redes WiFi disponibles
@@ -71,12 +87,12 @@ public:
         return networksJson;
     }
 
-    // Método para configurar una IP estática
-    void configStaticIp(IPAddress ip, IPAddress gateway, IPAddress subnet)
-    {
-        WiFi.config(ip, gateway, subnet);
-        Serial.println("IP estática configurada");
-    }
+    // // Método para configurar una IP estática
+    // void configStaticIp(IPAddress ip, IPAddress gateway, IPAddress subnet)
+    // {
+    //     WiFi.config(ip, gateway, subnet);
+    //     Serial.println("IP estática configurada");
+    // }
 
     // Método para obtener el SSID de la red WiFi a la que está conectado el dispositivo
     String getConnectedSSID()
@@ -142,17 +158,7 @@ public:
         Serial.println("WiFi reconectado");
     }
 
-
-    void configWifiDHCP()
-    {
-        WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
-        Serial.println("DHCP configured");
-
-        IPAddress ipAddress = WiFi.localIP();
-        Serial.print("IP: ");
-        Serial.println(ipAddress);
-        ESP.restart();
-    }
+    // Método para verificar si el dispositivo está conectado a una red WiFi
     bool verifyConnection()
     {
         if (WiFi.status() == WL_CONNECTED)

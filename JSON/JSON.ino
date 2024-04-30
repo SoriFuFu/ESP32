@@ -28,43 +28,26 @@ void setup()
     String wifiPassword = config.getWifiPassword();
     String apSSID = config.getApSSID();
     String apPassword = config.getApPassword();
-    wifiConfig.initWifiPlus(wifiSSID.c_str(), wifiPassword.c_str(), apSSID.c_str(), apPassword.c_str());
-    if (staticIp) // Configurar IP estática
-    {
-      IPAddress ip = config.getWifiIP();
-      IPAddress subnet = config.getWifiSubnet();
-      IPAddress gateway = config.getWifiGateway();
-      wifiConfig.configStaticIp(ip, gateway, subnet);
-    }
+    IPAddress ip = config.getWifiIP();
+    IPAddress subnet = config.getWifiSubnet();
+    IPAddress gateway = config.getWifiGateway();
+    wifiConfig.initWifiPlus(wifiSSID.c_str(), wifiPassword.c_str(), ip, subnet, gateway, apSSID.c_str(), apPassword.c_str());
+
     IPAddress ipAddress = wifiConfig.getIPAddress();
     IPAddress subnetAddress = wifiConfig.getSubnetMask();
     IPAddress gatewayAddress = wifiConfig.getGatewayIP();
     config.setWifiIP(ipAddress.toString());
     config.setWifiSubnet(subnetAddress.toString());
     config.setWifiGateway(gatewayAddress.toString());
-    Serial.print("IP: ");
-    Serial.println(ipAddress);
   }
   else if (wifiActive && !apActive) // Inicializar WiFi
   {
     String wifiSSID = config.getWifiSSID();
     String wifiPassword = config.getWifiPassword();
-    wifiConfig.initWifi(wifiSSID.c_str(), wifiPassword.c_str());
-    if (staticIp)
-    {
-      IPAddress ip = config.getWifiIP();
-      IPAddress subnet = config.getWifiSubnet();
-      IPAddress gateway = config.getWifiGateway();
-      wifiConfig.configStaticIp(ip, gateway, subnet);
-      Serial.print("IP: ");
-      Serial.println(ip);
-    }
-    else
-    {
-      IPAddress ipAddress = wifiConfig.getIPAddress();
-      Serial.print("IP: ");
-      Serial.println(ipAddress);
-    }
+    IPAddress ip = config.getWifiIP();
+    IPAddress subnet = config.getWifiSubnet();
+    IPAddress gateway = config.getWifiGateway();
+    wifiConfig.initWifi(wifiSSID.c_str(), wifiPassword.c_str(), ip, gateway, subnet);
   }
   else if (!wifiActive && apActive) // Inicializar AP
   {
@@ -72,8 +55,6 @@ void setup()
     String apPassword = config.getApPassword();
     wifiConfig.initAP(apSSID.c_str(), apPassword.c_str());
     IPAddress ipAddress = wifiConfig.getAPIP();
-    Serial.print("IP: ");
-    Serial.println(ipAddress);
   }
 
   // CONFIGURAR EL CANAL WEBSOCKET PARA LA CONFIGURACIÓN
@@ -112,20 +93,7 @@ void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t l
       webSocketConfig.sendTXT(num, networksJson);
     }
 
-    else if (action == "setWifiActive") // Activar/desactivar WiFi
-    {
-      String active = data["active"];
-      if (active == "false")
-      {
-        config.setWifiActive(false);
-        config.setWifiIP("");
-        config.setWifiSubnet("");
-        config.setWifiGateway("");
-      }
-      updateClientConfig();
-    }
-
-    else if (action == "setWifiConfig") // Conectar WiFi
+    else if (action == "setWifiConfig") // ACTIVAR O DESACTIVAR WIFI
     {
       bool wifiActive = data["wifiActive"];
       if (!wifiActive)
@@ -143,8 +111,16 @@ void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t l
       {
         String ssid = data["ssid"];
         String password = data["password"];
+        String ipConfig = data["ip"];
+        String subnetConfig = data["subnet"];
+        String gatewayConfig = data["gateway"];
 
-        wifiConfig.initWifi(ssid.c_str(), password.c_str()); // Inicializar WiFi
+        IPAddress ip;
+        IPAddress subnet;
+        IPAddress gateway;
+
+        wifiConfig.initWifi(ssid.c_str(), password.c_str(), ip, gateway, subnet);
+
         bool WifiConnection = wifiConfig.verifyConnection(); // Verificar la conexión
         if (WifiConnection)
         {
@@ -155,6 +131,9 @@ void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t l
           IPAddress ip = wifiConfig.getIPAddress();
           IPAddress subnet = wifiConfig.getSubnetMask();
           IPAddress gateway = wifiConfig.getGatewayIP();
+          config.setWifiIP(ip.toString());
+          config.setWifiSubnet(subnet.toString());
+          config.setWifiGateway(gateway.toString());
           String message = "{ \"status\": \"true\", \"ip\": \"" + ip.toString() + "\", \"subnet\": \"" + subnet.toString() + "\", \"gateway\": \"" + gateway.toString() + "\" }";
           webSocketConfig.sendTXT(num, message);
           Serial.print("IP Wifi: ");
@@ -168,55 +147,6 @@ void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t l
       }
     }
 
-    else if (action == "setStaticIp") // Configurar IP estática
-    {
-      DynamicJsonDocument data(1024);
-      deserializeJson(data, (char *)payload);
-      bool staticIpEnabled = data["staticIp"];
-      bool staticIp = config.getWifiStaticIp();
-      if (staticIpEnabled)
-      {
-        Serial.println("Configurando IP estática");
-        String ipConfig = data["ip"];
-        String subnetConfig = data["subnet"];
-        String gatewayConfig = data["gateway"];
-        config.setWifiStaticIp(true);
-        config.setWifiIP(ipConfig);
-        config.setWifiSubnet(subnetConfig);
-        config.setWifiGateway(gatewayConfig);
-        IPAddress ip = config.getWifiIP();
-        IPAddress subnet = config.getWifiSubnet();
-        IPAddress gateway = config.getWifiGateway();
-        wifiConfig.configStaticIp(ip, gateway, subnet);
-        IPAddress ipWifi = wifiConfig.getIPAddress();
-        IPAddress subnetWifi = wifiConfig.getSubnetMask();
-        IPAddress gatewayWifi = wifiConfig.getGatewayIP();
-        if (ipWifi == ip && subnetWifi == subnet && gatewayWifi == gateway)
-        {
-          Serial.println("IP estática configurada");
-          Serial.print("IP: ");
-          Serial.println(ip);
-          sendMessage("true");
-        }
-        else
-        {
-          sendMessage("false");
-        }
-      }
-      else if (!staticIpEnabled)
-      {
-        if (staticIp)
-        {
-          config.setWifiStaticIp(false);
-          config.setWifiIP("");
-          config.setWifiSubnet("");
-          config.setWifiGateway("");
-          wifiConfig.configWifiDHCP();
-        }
-      }
-      updateClientConfig();
-    }
-
     else if (action == "setApConfig") // Configurar AP
     {
       String active = data["active"];
@@ -228,8 +158,6 @@ void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t l
         config.setApActive(true);
         config.setApStatus(true);
         IPAddress ip = wifiConfig.getAPIP();
-        Serial.print("IP: ");
-        Serial.println(ip);
       }
       else if (active == "false")
       {
@@ -240,84 +168,51 @@ void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t l
     }
 
     //****CONFIGURACIÓN RELÉS****//
-    if (action == "setRelayConfig") // Configurar relés
+    if (action == "setRelayActive") // Configurar relés
     {
       String relay = data["relay"];
 
-      if (relay == "1")
+      if (relay == "K1")
       {
         bool K1Active = data["K1Active"];
-        bool getK1Active = config.getK1Active();
-        if (K1Active && !getK1Active)
-        {
-          String relayName = data["relayName"];
-          String relayMode = data["relayMode"];
-          config.setK1Active(true);
-          config.setK1Name(relayName);
-          config.setK1Mode(relayMode);
-        }
-        else if (!K1Active && getK1Active)
-        {
-          config.setK1Active(false);
-          config.setK1Name("");
-          config.setK1Mode("");
-        }
+        config.setK1Active(K1Active);
       }
-      else if (relay == "2"){
+      else if (relay == "K2")
+      {
         bool K2Active = data["K2Active"];
-        bool getK2Active = config.getK2Active();
-        if (K2Active && !getK2Active)
-        {
-          String relayName = data["relayName"];
-          String relayMode = data["relayMode"];
-          config.setK2Active(true);
-          config.setK2Name(relayName);
-          config.setK2Mode(relayMode);
-        }
-        else if (!K2Active && getK2Active)
-        {
-          config.setK2Active(false);
-          config.setK2Name("");
-          config.setK2Mode("");
-        }
+        config.setK2Active(K2Active);
       }
-      else if (relay == "3"){
+      else if (relay == "K3")
+      {
         bool K3Active = data["K3Active"];
-        bool getK3Active = config.getK3Active();
-        if (K3Active && !getK3Active)
-        {
-          String relayName = data["relayName"];
-          String relayMode = data["relayMode"];
-          config.setK3Active(true);
-          config.setK3Name(relayName);
-          config.setK3Mode(relayMode);
-        }
-        else if (!K3Active && getK3Active)
-        {
-          config.setK3Active(false);
-          config.setK3Name("");
-          config.setK3Mode("");
-        }
+        config.setK3Active(K3Active);
       }
-      else if (relay == "4"){
+      else if (relay == "K4")
+      {
         bool K4Active = data["K4Active"];
-        bool getK4Active = config.getK4Active();
-        if (K4Active && !getK4Active)
-        {
-          String relayName = data["relayName"];
-          String relayMode = data["relayMode"];
-          config.setK4Active(true);
-          config.setK4Name(relayName);
-          config.setK4Mode(relayMode);
-        }
-        else if (!K4Active && getK4Active)
-        {
-          config.setK4Active(false);
-          config.setK4Name("");
-          config.setK4Mode("");
-        }
+        config.setK4Active(K4Active);
       }
-     
+    }
+    else if (action == "setRelayName")
+    {
+      String relay = data["relay"];
+      String relayName = data["relayName"];
+      if (relay == "K1")
+      {
+          config.setK1Name(relayName);
+      }
+      else if (relay == "K2")
+      {
+          config.setK2Name(relayName);
+      }
+      else if (relay == "K3")
+      {
+          config.setK3Name(relayName);
+      }
+      else if (relay == "K4")
+      {
+          config.setK4Name(relayName);
+      }
     }
   }
   else if (type == WStype_CONNECTED)

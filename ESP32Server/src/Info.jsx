@@ -59,7 +59,7 @@ const InfoConfig = ({ wifiConfig, apConfig, relay }) => {
                                 <Card.Body>
                                     <Card.Title>Configuración de {key}</Card.Title>
                                     
-                                        <Card.Text><strong>Estado:</strong> {renderStatus(individualRelay.state)}</Card.Text>
+                                        <Card.Text><strong>Estado:</strong> {renderStatus(individualRelay.active)}</Card.Text>
                                         <Card.Text><strong>Nombre: </strong> {individualRelay.name}</Card.Text>
                                         {/* Agrega más detalles de la configuración de relé aquí */}
                                    

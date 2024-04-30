@@ -1,13 +1,13 @@
 {
     "Wifi": {
-        "active": false,
-        "status": false,
-        "ssid": "",
-        "password": "",
-        "staticIp": false,
-        "ip": "",
-        "subnet": "",
-        "gateway": ""
+        "active": true,
+        "status": true,
+        "ssid": "Tarta-D",
+        "password": "OliviaPampo2024...",
+        "staticIp": true,
+        "ip": "192.168.1.38",
+        "subnet": "255.255.255.0",
+        "gateway": "192.168.1.1"
     },
     "MQTT": {
         "active": true,

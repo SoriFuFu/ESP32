@@ -32,7 +32,8 @@ const ApConfig = ({ apConfig, wifiStatus, setApStatusConfig, webSocket }) => {
                     webSocket.send(JSON.stringify(message));
                     setApStatus(true);
                     setApEnabled(true);
-                    handleGetConfig();
+                    setApStatusConfig(true);
+                    
 
                 } else {
                     console.log('WebSocket no está inicializado');
@@ -44,7 +45,8 @@ const ApConfig = ({ apConfig, wifiStatus, setApStatusConfig, webSocket }) => {
                     webSocket.send(JSON.stringify(message));
                     setApStatus(false);
                     setApEnabled(false);
-                    handleGetConfig();
+                    setApStatusConfig(false);
+                   
                 } else {
                     console.log('WebSocket no está inicializado');
                 }
