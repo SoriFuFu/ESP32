@@ -23,9 +23,9 @@ const App = () => {
     }, []);
 
     const handleGetConfig = () => {
-        const ws = new WebSocket('ws://192.168.1.38:81');
+        // const ws = new WebSocket('ws://192.168.1.38:81');
         // const ws = new WebSocket('ws://192.168.4.1:81');
-        // const ws = new WebSocket('ws://' + window.location.hostname + ':81');
+        const ws = new WebSocket('ws://' + window.location.hostname + ':81');
         setWebSocket(ws);
         
         ws.onopen = () => {

@@ -13,12 +13,12 @@ private:
 public:
   ConfigManager() {}
 
-  StaticJsonDocument<2048> &getConfigDoc()
+  StaticJsonDocument<2048> &getConfigDoc() // MÉTODO PARA OBTENER EL DOCUMENTO JSON
   {
     return configDoc;
   }
 
-  void initSPIFFS()
+  void initSPIFFS() // MÉTODO PARA INICIAR EL SISTEMA DE ARCHIVOS SPIFFS
   {
     if (!SPIFFS.begin())
     {
@@ -27,7 +27,7 @@ public:
     }
   }
 
-  void loadConfig()
+  void loadConfig() // MÉTODO PARA CARGAR LA CONFIGURACIÓN DESDE EL ARCHIVO JSON
   {
     File configFile = SPIFFS.open(configFilePath, "r");
     if (!configFile)
@@ -46,7 +46,7 @@ public:
     configFile.close();
   }
 
-  void saveConfig()
+  void saveConfig() // MÉTODO PARA GUARDAR LA CONFIGURACIÓN EN EL ARCHIVO JSON
   {
     File configFile = SPIFFS.open(configFilePath, "w");
     if (!configFile)
@@ -59,57 +59,254 @@ public:
     configFile.close();
   }
 
-  // Métodos para obtener y actualizar valores de Wifi
-  bool getWifiActive()
+  //*****GETTERS *****//
+  bool getWifiActive() // MÉTODO PARA OBTENER EL ESTADO DEL WIFI
   {
     return configDoc["Wifi"]["active"];
   }
 
-  void setWifiActive(bool active)
+  bool getWifiStatus() // MÉTODO PARA OBTENER EL ESTADO DEL WIFI
+  {
+    return configDoc["Wifi"]["status"];
+  }
+
+  String getWifiSSID() // MÉTODO PARA OBTENER EL NOMBRE DE LA RED WIFI
+  {
+    return configDoc["Wifi"]["ssid"].as<String>();
+  }
+
+  String getWifiPassword() // MÉTODO PARA OBTENER LA CONTRASEÑA DE LA RED WIFI
+  {
+    return configDoc["Wifi"]["password"].as<String>();
+  }
+
+  bool getWifiStaticIp() // MÉTODO PARA OBTENER EL ESTADO DE LA IP ESTÁTICA
+  {
+    return configDoc["Wifi"]["staticIp"];
+  }
+
+  IPAddress getWifiIP() // MÉTODO PARA OBTENER LA DIRECCIÓN IP DEL DISPOSITIVO
+  {
+    String ipString = configDoc["Wifi"]["ip"].as<String>();
+    IPAddress ip;
+    ip.fromString(ipString);
+    return ip;
+  }
+
+  IPAddress getWifiSubnet() // MÉTODO PARA OBTENER LA MÁSCARA DE SUBRED
+  {
+    String subnetString = configDoc["Wifi"]["subnet"].as<String>();
+    IPAddress subnet;
+    subnet.fromString(subnetString);
+    return subnet;
+  }
+
+  IPAddress getWifiGateway() // MÉTODO PARA OBTENER LA PUERTA DE ENLACE
+  {
+    String gatewayString = configDoc["Wifi"]["gateway"].as<String>();
+    IPAddress gateway;
+    gateway.fromString(gatewayString);
+    return gateway;
+  }
+
+  bool getApStatus() // MÉTODO PARA OBTENER EL ESTADO DEL PUNTO DE ACCESO
+  {
+    return configDoc["AP"]["status"];
+  }
+
+  bool getApActive() // MÉTODO PARA OBTENER EL ESTADO DEL PUNTO DE ACCESO
+  {
+    return configDoc["AP"]["active"];
+  }
+
+  String getApSSID() // MÉTODO PARA OBTENER EL NOMBRE DEL PUNTO DE ACCESO
+  {
+    return configDoc["AP"]["ssid"].as<String>();
+  }
+
+  String getApPassword() // MÉTODO PARA OBTENER LA CONTRASEÑA DEL PUNTO DE ACCESO
+  {
+    return configDoc["AP"]["password"].as<String>();
+  }
+
+  //MÉTODO DE K1
+  bool getK1Active() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K1
+  {
+    return configDoc["Relay"]["K1"]["active"];
+  }
+
+  String getK1Mode() // MÉTODO PARA OBTENER EL MODO DEL RELÉ K1
+  {
+    return configDoc["Relay"]["K1"]["mode"].as<String>();
+  }
+  
+  String getK1Name() // MÉTODO PARA OBTENER EL NOMBRE DEL RELÉ K1
+  {
+    return configDoc["Relay"]["K1"]["name"].as<String>();
+  }
+
+  bool getK1State() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K1
+  {
+    return configDoc["Relay"]["K1"]["state"];
+  }
+  
+  unsigned long getK1ActivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE ACTIVACIÓN DEL RELÉ K1
+  {
+    return configDoc["Relay"]["K1"]["activationTime"];
+  }
+  
+  unsigned long getK1Timer() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K1
+  {
+    return configDoc["Relay"]["K1"]["timer"];
+  }
+  
+  unsigned long getK1DeactivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K1
+  {
+    return configDoc["Relay"]["K1"]["deactivationTime"];
+  }
+
+  //MÉTODO DE K2
+  bool getK2Active() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K2
+  {
+    return configDoc["Relay"]["K2"]["active"];
+  }
+
+  String getK2Mode() // MÉTODO PARA OBTENER EL MODO DEL RELÉ K2
+  {
+    return configDoc["Relay"]["K2"]["mode"].as<String>();
+  }
+
+  String getK2Name() // MÉTODO PARA OBTENER EL NOMBRE DEL RELÉ K2
+  {
+    return configDoc["Relay"]["K2"]["name"].as<String>();
+  }
+
+  bool getK2State() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K2
+  {
+    return configDoc["Relay"]["K2"]["state"];
+  }
+  
+  unsigned long getK2Timer() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K2
+  {
+    return configDoc["Relay"]["K2"]["timer"];
+  }
+
+  unsigned long getK2ActivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE ACTIVACIÓN DEL RELÉ K2
+  {
+    return configDoc["Relay"]["K2"]["activationTime"];
+  }
+
+  unsigned long getK2DeactivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K2
+  {
+    return configDoc["Relay"]["K2"]["deactivationTime"];
+  }
+
+  //MÉTODO DE K3
+  bool getK3Active() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K3
+  {
+    return configDoc["Relay"]["K3"]["active"];
+  }
+
+  String getK3Mode() // MÉTODO PARA OBTENER EL MODO DEL RELÉ K3
+  {
+    return configDoc["Relay"]["K3"]["mode"].as<String>();
+  }
+
+  String getK3Name() // MÉTODO PARA OBTENER EL NOMBRE DEL RELÉ K3
+  {
+    return configDoc["Relay"]["K3"]["name"].as<String>();
+  }
+
+  bool getK3State() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K3
+  {
+    return configDoc["Relay"]["K3"]["state"];
+  }
+
+  unsigned long getK3Timer() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K3
+  {
+    return configDoc["Relay"]["K3"]["timer"];
+  }
+
+  unsigned long getK3ActivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE ACTIVACIÓN DEL RELÉ K3
+  {
+    return configDoc["Relay"]["K3"]["activationTime"];
+  }
+
+  unsigned long getK3DeactivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K3
+  {
+    return configDoc["Relay"]["K3"]["deactivationTime"];
+  }
+
+
+  //MÉTODO DE K4
+  bool getK4Active() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K4
+  {
+    return configDoc["Relay"]["K4"]["active"];
+  }
+
+  String getK4Mode() // MÉTODO PARA OBTENER EL MODO DEL RELÉ K4
+  {
+    return configDoc["Relay"]["K4"]["mode"].as<String>();
+  }
+
+  String getK4Name() // MÉTODO PARA OBTENER EL NOMBRE DEL RELÉ K4
+  {
+    return configDoc["Relay"]["K4"]["name"].as<String>();
+  }
+
+  bool getK4State() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K4
+  {
+    return configDoc["Relay"]["K4"]["state"];
+  }
+
+  unsigned long getK4Timer() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K4
+  {
+    return configDoc["Relay"]["K4"]["timer"];
+  }
+
+  unsigned long getK4ActivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE ACTIVACIÓN DEL RELÉ K4
+  {
+    return configDoc["Relay"]["K4"]["activationTime"];
+  }
+
+  unsigned long getK4DeactivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K4
+  {
+    return configDoc["Relay"]["K4"]["deactivationTime"];
+  }
+
+  
+  //*****SETTERS *****//
+  void setApSSID(String ssid) // MÉTODO PARA CAMBIAR EL NOMBRE DEL PUNTO DE ACCESO
+  {
+    configDoc["AP"]["ssid"] = ssid;
+    saveConfig();
+  }
+
+  void setWifiActive(bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL WIFI
   {
     configDoc["Wifi"]["active"] = active;
     saveConfig();
   }
 
-  bool getWifiStatus()
-  {
-    return configDoc["Wifi"]["status"];
-  }
-
-  void setWifiStatus(bool status)
+  void setWifiStatus(bool status) // MÉTODO PARA CAMBIAR EL ESTADO DEL WIFI
   {
     configDoc["Wifi"]["status"] = status;
     saveConfig();
   }
 
-  String getWifiSSID()
-  {
-    return configDoc["Wifi"]["ssid"].as<String>();
-  }
-
-  void setWifiSSID(String ssid)
+  void setWifiSSID(String ssid) // MÉTODO PARA CAMBIAR EL NOMBRE DE LA RED WIFI
   {
     configDoc["Wifi"]["ssid"] = ssid;
     saveConfig();
   }
 
-  String getWifiPassword()
-  {
-    return configDoc["Wifi"]["password"].as<String>();
-  }
-
-  void setWifiPassword(String password)
+  void setWifiPassword(String password) // MÉTODO PARA CAMBIAR LA CONTRASEÑA DE LA RED WIFI
   {
     configDoc["Wifi"]["password"] = password;
     saveConfig();
   }
 
-  bool getWifiStaticIp()
-  {
-    return configDoc["Wifi"]["staticIp"];
-  }
-
-  void setWifiStaticIp(bool staticIp)
+  void setWifiStaticIp(bool staticIp) // MÉTODO PARA CAMBIAR EL ESTADO DE LA IP ESTÁTICA
   {
     if (staticIp)
     {
@@ -125,55 +322,25 @@ public:
     saveConfig();
   }
 
-  IPAddress getWifiIP()
-  {
-    String ipString = configDoc["Wifi"]["ip"].as<String>();
-    IPAddress ip;
-    ip.fromString(ipString);
-    return ip;
-  }
-
-  IPAddress getWifiSubnet()
-  {
-    String subnetString = configDoc["Wifi"]["subnet"].as<String>();
-    IPAddress subnet;
-    subnet.fromString(subnetString);
-    return subnet;
-  }
-
-  IPAddress getWifiGateway()
-  {
-    String gatewayString = configDoc["Wifi"]["gateway"].as<String>();
-    IPAddress gateway;
-    gateway.fromString(gatewayString);
-    Serial.print("Gateway: ");
-    Serial.println(gateway);
-    return gateway;
-  }
-
-  void setWifiIP(String ip)
+  void setWifiIP(String ip) // MÉTODO PARA CAMBIAR LA DIRECCIÓN IP DEL DISPOSITIVO
   {
     configDoc["Wifi"]["ip"] = ip;
     saveConfig();
   }
 
-  void setWifiSubnet(String subnet)
+  void setWifiSubnet(String subnet) // MÉTODO PARA CAMBIAR LA MÁSCARA DE SUBRED
   {
     configDoc["Wifi"]["subnet"] = subnet;
     saveConfig();
   }
 
-  void setWifiGateway(String gateway)
+  void setWifiGateway(String gateway) // MÉTODO PARA CAMBIAR LA PUERTA DE ENLACE
   {
     configDoc["Wifi"]["gateway"] = gateway;
     saveConfig();
   }
 
-  bool getApActive()
-  {
-    return configDoc["AP"]["active"];
-  }
-  void setApActive(bool active)
+  void setApActive(bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL PUNTO DE ACCESO
   {
     if (active)
     {
@@ -186,44 +353,20 @@ public:
     saveConfig();
   }
 
-  bool getApStatus()
-  {
-    return configDoc["AP"]["status"];
-  }
-  void setApStatus(bool status)
+  void setApStatus(bool status) // MÉTODO PARA CAMBIAR EL ESTADO DEL PUNTO DE ACCESO
   {
     configDoc["AP"]["status"] = status;
     saveConfig();
   }
 
-  // Métodos para obtener y actualizar valores AP
-  String getApSSID()
-  {
-    return configDoc["AP"]["ssid"].as<String>();
-  }
-  void setApSSID(String ssid)
-  {
-    configDoc["AP"]["ssid"] = ssid;
-    saveConfig();
-  }
-
-  String getApPassword()
-  {
-    return configDoc["AP"]["password"].as<String>();
-  }
-  void setApPassword(String password)
+  void setApPassword(String password) // MÉTODO PARA CAMBIAR LA CONTRASEÑA DEL PUNTO DE ACCESO
   {
     configDoc["AP"]["password"] = password;
     saveConfig();
   }
 
-  // Métodos para obtener y actualizar valores de K1
-  bool getK1Active()
-  {
-    return configDoc["Relay"]["K1"]["active"];
-  }
-
-  void setK1Active(bool active)
+  //MÉTODOS DE K1
+  void setK1Active(bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K1
   {
     if (active)
     {
@@ -239,23 +382,13 @@ public:
     }
   }
 
-  String getK1Mode()
-  {
-    return configDoc["Relay"]["K1"]["mode"].as<String>();
-  }
-
-  void setK1Mode(String mode)
+  void setK1Mode(String mode) // MÉTODO PARA CAMBIAR EL MODO DEL RELÉ K1
   {
     configDoc["Relay"]["K1"]["mode"] = mode;
     saveConfig();
   }
 
-  String getK1Name()
-  {
-    return configDoc["Relay"]["K1"]["name"].as<String>();
-  }
-
-  void setK1Name(String name)
+  void setK1Name(String name)  // MÉTODO PARA CAMBIAR EL NOMBRE DEL RELÉ K1
   {
     configDoc["Relay"]["K1"]["name"] = name;
     saveConfig();
@@ -263,54 +396,32 @@ public:
     Serial.println(name);
   }
 
-  bool getK1State()
-  {
-    return configDoc["Relay"]["K1"]["state"];
-  }
-  void setK1State(bool state)
+  void setK1State(bool state) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K1
   {
     configDoc["Relay"]["K1"]["state"] = state;
     saveConfig();
   }
-  unsigned long getK1Timer()
-  {
-    return configDoc["Relay"]["K1"]["timer"];
-  }
-  void setK1Timer(int timer)
+
+  void setK1Timer(int timer) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K1
   {
     configDoc["Relay"]["K1"]["timer"] = timer;
     saveConfig();
   }
 
-  unsigned long getK1ActivationTime()
-  {
-    return configDoc["Relay"]["K1"]["activationTime"];
-  }
-
-  void setK1ActivationTime(unsigned long activationTime)
+  void setK1ActivationTime(unsigned long activationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE ACTIVACIÓN DEL RELÉ K1
   {
     configDoc["Relay"]["K1"]["activationTime"] = activationTime;
     saveConfig();
   }
 
-  unsigned long getK1DeactivationTime()
-  {
-    return configDoc["Relay"]["K1"]["deactivationTime"];
-  }
-
-  void setK1DeactivationTime(unsigned long deactivationTime)
+  void setK1DeactivationTime(unsigned long deactivationTime)  // MÉTODO PARA CAMBIAR EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K1
   {
     configDoc["Relay"]["K1"]["deactivationTime"] = deactivationTime;
     saveConfig();
   }
 
-  // Métodos para obtener y actualizar valores de K2
-  bool getK2Active()
-  {
-    return configDoc["Relay"]["K2"]["active"];
-  }
-
-  void setK2Active(bool active)
+  //MÉTODOS DE K2
+  void setK2Active(bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K2
   {
     if (active)
     {
@@ -326,23 +437,13 @@ public:
     }
   }
 
-  String getK2Mode()
-  {
-    return configDoc["Relay"]["K2"]["mode"].as<String>();
-  }
-
-  void setK2Mode(String mode)
+  void setK2Mode(String mode) // MÉTODO PARA CAMBIAR EL MODO DEL RELÉ K2
   {
     configDoc["Relay"]["K2"]["mode"] = mode;
     saveConfig();
   }
 
-  String getK2Name()
-  {
-    return configDoc["Relay"]["K2"]["name"].as<String>();
-  }
-
-  void setK2Name(String name)
+  void setK2Name(String name) // MÉTODO PARA CAMBIAR EL NOMBRE DEL RELÉ K2
   {
     configDoc["Relay"]["K2"]["name"] = name;
     saveConfig();
@@ -350,54 +451,32 @@ public:
     Serial.println(name);
   }
 
-  bool getK2State()
-  {
-    return configDoc["Relay"]["K2"]["state"];
-  }
-  void setK2State(bool state)
+  void setK2State(bool state) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K2
   {
     configDoc["Relay"]["K2"]["state"] = state;
     saveConfig();
   }
-  unsigned long getK2Timer()
-  {
-    return configDoc["Relay"]["K2"]["timer"];
-  }
-  void setK2Timer(int timer)
+
+  void setK2Timer(int timer) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K2
   {
     configDoc["Relay"]["K2"]["timer"] = timer;
     saveConfig();
   }
 
-  unsigned long getK2ActivationTime()
-  {
-    return configDoc["Relay"]["K2"]["activationTime"];
-  }
-
-  void setK2ActivationTime(unsigned long activationTime)
+  void setK2ActivationTime(unsigned long activationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE ACTIVACIÓN DEL RELÉ K2
   {
     configDoc["Relay"]["K2"]["activationTime"] = activationTime;
     saveConfig();
   }
 
-  unsigned long getK2DeactivationTime()
-  {
-    return configDoc["Relay"]["K2"]["deactivationTime"];
-  }
-
-  void setK2DeactivationTime(unsigned long deactivationTime)
+  void setK2DeactivationTime(unsigned long deactivationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K2
   {
     configDoc["Relay"]["K2"]["deactivationTime"] = deactivationTime;
     saveConfig();
   }
 
-  // Métodos para obtener y actualizar valores de K3
-  bool getK3Active()
-  {
-    return configDoc["Relay"]["K3"]["active"];
-  }
-
-  void setK3Active(bool active)
+  //MÉTODOS DE K3
+  void setK3Active(bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K3
   {
     if (active)
     {
@@ -413,78 +492,46 @@ public:
     }
   }
 
-  String getK3Mode()
-  {
-    return configDoc["Relay"]["K3"]["mode"].as<String>();
-  }
-
-  void setK3Mode(String mode)
+  void setK3Mode(String mode) // MÉTODO PARA CAMBIAR EL MODO DEL RELÉ K3
   {
     configDoc["Relay"]["K3"]["mode"] = mode;
     saveConfig();
   }
 
-  String getK3Name()
-  {
-    return configDoc["Relay"]["K3"]["name"].as<String>();
-  }
-
-  void setK3Name(String name)
+  void setK3Name(String name) // MÉTODO PARA CAMBIAR EL NOMBRE DEL RELÉ K3
   {
     configDoc["Relay"]["K3"]["name"] = name;
     saveConfig();
-    Serial.println("Nombre del relé K3 actualizado a ");
+    Serial.print("Nombre del relé K3 actualizado a ");
     Serial.println(name);
   }
 
-  bool getK3State()
-  {
-    return configDoc["Relay"]["K3"]["state"];
-  }
-  void setK3State(bool state)
+  void setK3State(bool state) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K3
   {
     configDoc["Relay"]["K3"]["state"] = state;
     saveConfig();
   }
-  unsigned long getK3Timer()
-  {
-    return configDoc["Relay"]["K3"]["timer"];
-  }
-  void setK3Timer(int timer)
+
+  void setK3Timer(int timer) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K3
   {
     configDoc["Relay"]["K3"]["timer"] = timer;
     saveConfig();
   }
 
-  unsigned long getK3ActivationTime()
-  {
-    return configDoc["Relay"]["K3"]["activationTime"];
-  }
-
-  void setK3ActivationTime(unsigned long activationTime)
+  void setK3ActivationTime(unsigned long activationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE ACTIVACIÓN DEL RELÉ K3
   {
     configDoc["Relay"]["K3"]["activationTime"] = activationTime;
     saveConfig();
   }
 
-  unsigned long getK3DeactivationTime()
-  {
-    return configDoc["Relay"]["K3"]["deactivationTime"];
-  }
-
-  void setK3DeactivationTime(unsigned long deactivationTime)
+  void setK3DeactivationTime(unsigned long deactivationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K3
   {
     configDoc["Relay"]["K3"]["deactivationTime"] = deactivationTime;
     saveConfig();
   }
 
-  // Métodos para obtener y actualizar valores de K4
-  bool getK4Active()
-  {
-    return configDoc["K4"]["active"];
-  }
-
-  void setK4Active(bool active)
+  //MÉTODOS DE K4
+  void setK4Active(bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K4
   {
     if (active)
     {
@@ -498,74 +545,47 @@ public:
       saveConfig();
       Serial.println("Relé K4 desactivado");
     }
-
-    
   }
 
-  String getK4Mode()
-  {
-    return configDoc["Relay"]["K4"]["mode"].as<String>();
-  }
-
-  void setK4Mode(String mode)
+  void setK4Mode(String mode) // MÉTODO PARA CAMBIAR EL MODO DEL RELÉ K4
   {
     configDoc["Relay"]["K4"]["mode"] = mode;
     saveConfig();
   }
 
-  String getK4Name()
-  {
-    return configDoc["Relay"]["K4"]["name"].as<String>();
-  }
-
-  void setK4Name(String name)
+  void setK4Name(String name) // MÉTODO PARA CAMBIAR EL NOMBRE DEL RELÉ K4
   {
     configDoc["Relay"]["K4"]["name"] = name;
     saveConfig();
-    Serial.println("Nombre del relé K4 actualizado a ");
+    Serial.print("Nombre del relé K4 actualizado a ");
     Serial.println(name);
   }
 
-  bool getK4State()
-  {
-    return configDoc["Relay"]["K4"]["state"];
-  }
-  void setK4State(bool state)
+  void setK4State(bool state) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K4
   {
     configDoc["Relay"]["K4"]["state"] = state;
     saveConfig();
   }
-  unsigned long getK4Timer()
-  {
-    return configDoc["Relay"]["K4"]["timer"];
-  }
-  void setK4Timer(int timer)
+
+  void setK4Timer(int timer) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K4
   {
     configDoc["Relay"]["K4"]["timer"] = timer;
     saveConfig();
   }
-
-  unsigned long getK4ActivationTime()
-  {
-    return configDoc["Relay"]["K4"]["activationTime"];
-  }
-
-  void setK4ActivationTime(unsigned long activationTime)
+ 
+  void setK4ActivationTime(unsigned long activationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE ACTIVACIÓN DEL RELÉ K4
   {
     configDoc["Relay"]["K4"]["activationTime"] = activationTime;
     saveConfig();
   }
 
-  unsigned long getK4DeactivationTime()
-  {
-    return configDoc["Relay"]["K4"]["deactivationTime"];
-  }
-
-  void setK4DeactivationTime(unsigned long deactivationTime)
+  void setK4DeactivationTime(unsigned long deactivationTime)  // MÉTODO PARA CAMBIAR EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K4
   {
     configDoc["Relay"]["K4"]["deactivationTime"] = deactivationTime;
     saveConfig();
   }
+
+
 };
 
 #endif
