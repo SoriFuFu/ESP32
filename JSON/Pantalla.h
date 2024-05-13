@@ -102,6 +102,11 @@ public:
     lcd.clear();
   }
 
+  void clearLine(int line) // LIMPIA UNA LÍNEA DE LA PANTALLA
+  {
+    lcd.setCursor(0, line);
+    lcd.print("                    ");
+  }
   void printWifi() // MUESTRA EL ICONO DE WIFI
   {
     lcd.createChar(1, wifiSymbol);
@@ -132,38 +137,26 @@ public:
   {
     lcd.setCursor(0, 1);
     lcd.print("Menu Principal");
-    lcd.setCursor(4, 1);
+    lcd.setCursor(0, 2);
     lcd.print("Wifi");
-    lcd.setCursor(4, 2);
+    lcd.setCursor(0, 3);
     lcd.print("Reset");
-    lcd.setCursor(4, 3);
-    lcd.print("Volver");
   }
 
-  void relayPanel() // MUESTRA EL PANEL DE CONTROL DE LOS RELES
+  void relaySeparation() // MUESTA LA SEPARACIÓN DE LOS RELES
   {
-    lcd.setCursor(0, 1);
-    lcd.print("  Riego  ");
     lcd.createChar(2, separationSymbol);
     lcd.setCursor(9, 1);
     lcd.write((uint8_t)2);
     lcd.createChar(2, separationSymbol);
     lcd.setCursor(10, 1);
     lcd.write((uint8_t)2);
-    lcd.setCursor(13, 1);
-    lcd.print("Riego");
-
-    lcd.setCursor(0, 2);
-    lcd.print("Interior");
     lcd.createChar(2, separationSymbol);
     lcd.setCursor(9, 2);
     lcd.write((uint8_t)2);
     lcd.createChar(2, separationSymbol);
     lcd.setCursor(10, 2);
     lcd.write((uint8_t)2);
-    lcd.setCursor(12, 2);
-    lcd.print("Exterior");
-
     lcd.createChar(2, separationSymbol);
     lcd.setCursor(9, 3);
     lcd.write((uint8_t)2);
@@ -172,19 +165,75 @@ public:
     lcd.write((uint8_t)2);
   }
 
+  void K1Name(String name) // MUESTRA EL NOMBRE DEL K1
+  {
+    lcd.setCursor(0, 1);
+    lcd.print("  Riego  ");
+    // lcd.print(name);
+    lcd.setCursor(0, 2);
+    lcd.print("Interior");
+  }
 
+  void K2Name(String name) // MUESTRA EL NOMBRE DEL K2
+  {
+    lcd.setCursor(13, 1);
+    lcd.print("Riego");
+    // lcd.print(name);
+    lcd.setCursor(12, 2);
+    lcd.print("Exterior");
+  }
 
+  void K3Name(String name) // MUESTRA EL NOMBRE DEL K3
+  {
+    lcd.setCursor(0, 1);
+    lcd.print("  Luz  ");
+    // lcd.print(name);
+    lcd.setCursor(0, 2);
+    lcd.print("Interior");
+  }
 
-  void K1Timer(int TiempoRestanteRiegoExterior)
+  void K4Name(String name) // MUESTRA EL NOMBRE DEL K4
+  {
+    lcd.setCursor(13, 1);
+    lcd.print("Luz");
+    // lcd.print(name);
+    lcd.setCursor(12, 2);
+    lcd.print("Exterior");
+  }
+
+  void K1Timer(unsigned long remainingTimeK1) // MUESTRA EL TEMPORIZADOR DEL K1
   {
     // Convertir milisegundos a segundos
-    int segundosTotales = TiempoRestanteRiegoExterior / 1000;
+    int segundosTotales = remainingTimeK1 / 1000;
+    // Calcular horas, minutos y segundos
+    int horas = segundosTotales / 3600;             // Obtener las horas completas
+    int segundosRestantes = segundosTotales % 3600; // Obtener los segundos restantes después de las horas
+    int minutos = segundosRestantes / 60;           // Obtener los minutos restantes
+    int segundos = segundosRestantes % 60;          // Obtener los segundos restantes después de los minutos
+                                                    // Formatear y mostrar en el LCD
+    lcd.setCursor(0, 3);
+    lcd.print(horas < 10 ? "0" + String(horas) : String(horas)); // Mostrar horas con dos dígitos
+    lcd.setCursor(2, 3);
+    lcd.print(":");
+    lcd.setCursor(3, 3);
+    lcd.print(minutos < 10 ? "0" + String(minutos) : String(minutos)); // Mostrar minutos con dos dígitos
+    lcd.setCursor(5, 3);
+    lcd.print(":");
+    lcd.setCursor(6, 3);
+    lcd.print(segundos < 10 ? "0" + String(segundos) : String(segundos)); // Mostrar segundos con dos dígitos
+  }
+
+  void K2Timer(unsigned long remainingTimeK2) // MUESTRA EL TEMPORIZADOR DE K2
+  {
+    // Convertir milisegundos a segundos
+    int segundosTotales = remainingTimeK2 / 1000;
 
     // Calcular horas, minutos y segundos
     int horas = segundosTotales / 3600;             // Obtener las horas completas
     int segundosRestantes = segundosTotales % 3600; // Obtener los segundos restantes después de las horas
     int minutos = segundosRestantes / 60;           // Obtener los minutos restantes
     int segundos = segundosRestantes % 60;          // Obtener los segundos restantes después de los minutos
+
     // Formatear y mostrar en el LCD
     lcd.setCursor(12, 3);
     lcd.print(horas < 10 ? "0" + String(horas) : String(horas)); // Mostrar horas con dos dígitos
@@ -197,10 +246,11 @@ public:
     lcd.setCursor(18, 3);
     lcd.print(segundos < 10 ? "0" + String(segundos) : String(segundos)); // Mostrar segundos con dos dígitos
   }
-  void K2Timer(int TiempoRestanteRiegoInterior)
+
+  void K3Timer(unsigned long remainingTimeK3) // MUESTRA EL TEMPORIZADOR DE K3
   {
     // Convertir milisegundos a segundos
-    int segundosTotales = TiempoRestanteRiegoInterior / 1000;
+    int segundosTotales = remainingTimeK3 / 1000;
 
     // Calcular horas, minutos y segundos
     int horas = segundosTotales / 3600;             // Obtener las horas completas
@@ -220,34 +270,85 @@ public:
     lcd.setCursor(6, 3);
     lcd.print(segundos < 10 ? "0" + String(segundos) : String(segundos)); // Mostrar segundos con dos dígitos
   }
-  void LimpiarContadorExterior()
+
+  void K4Timer(unsigned long remainingTimeK4) // MUESTRA EL TEMPORIZADOR DE K4
   {
+    // Convertir milisegundos a segundos
+    int segundosTotales = remainingTimeK4 / 1000;
+
+    // Calcular horas, minutos y segundos
+    int horas = segundosTotales / 3600;             // Obtener las horas completas
+    int segundosRestantes = segundosTotales % 3600; // Obtener los segundos restantes después de las horas
+    int minutos = segundosRestantes / 60;           // Obtener los minutos restantes
+    int segundos = segundosRestantes % 60;          // Obtener los segundos restantes después de los minutos
+
     // Formatear y mostrar en el LCD
     lcd.setCursor(12, 3);
-    lcd.print("  "); // Mostrar horas con dos dígitos
+    lcd.print(horas < 10 ? "0" + String(horas) : String(horas)); // Mostrar horas con dos dígitos
     lcd.setCursor(14, 3);
     lcd.print(":");
     lcd.setCursor(15, 3);
-    lcd.print("  "); // Mostrar minutos con dos dígitos
+    lcd.print(minutos < 10 ? "0" + String(minutos) : String(minutos)); // Mostrar minutos con dos dígitos
     lcd.setCursor(17, 3);
     lcd.print(":");
     lcd.setCursor(18, 3);
-    lcd.print("  "); // Mostrar segundos con dos dígitos
+    lcd.print(segundos < 10 ? "0" + String(segundos) : String(segundos)); // Mostrar segundos con dos dígitos
   }
-  void LimpiarContadorInterior()
-  {
 
-    // Formatear y mostrar en el LCD
+  void cleanK1Timer() // LIMPIA EL TEMPORIZADOR DE K1
+  {
     lcd.setCursor(0, 3);
-    lcd.print("  "); // Mostrar horas con dos dígitos
+    lcd.print("  ");
     lcd.setCursor(2, 3);
     lcd.print(":");
     lcd.setCursor(3, 3);
-    lcd.print("  "); // Mostrar minutos con dos dígitos
+    lcd.print("  ");
     lcd.setCursor(5, 3);
     lcd.print(":");
     lcd.setCursor(6, 3);
-    lcd.print("  "); // Mostrar segundos con dos dígitos
+    lcd.print("  ");
+  }
+
+  void cleanK2Timer() // LIMPIA EL TEMPORIZADOR DE K2
+  {
+    lcd.setCursor(12, 3);
+    lcd.print("  ");
+    lcd.setCursor(14, 3);
+    lcd.print(":");
+    lcd.setCursor(15, 3);
+    lcd.print("  ");
+    lcd.setCursor(17, 3);
+    lcd.print(":");
+    lcd.setCursor(18, 3);
+    lcd.print("  ");
+  }
+
+  void cleanK3Timer() // LIMPIA EL TEMPORIZADOR DE K3
+  {
+    lcd.setCursor(0, 3);
+    lcd.print("  ");
+    lcd.setCursor(2, 3);
+    lcd.print(":");
+    lcd.setCursor(3, 3);
+    lcd.print("  ");
+    lcd.setCursor(5, 3);
+    lcd.print(":");
+    lcd.setCursor(6, 3);
+    lcd.print("  ");
+  }
+
+  void cleanK4Timer() // LIMPIA EL TEMPORIZADOR DE K4
+  {
+    lcd.setCursor(12, 3);
+    lcd.print("  ");
+    lcd.setCursor(14, 3);
+    lcd.print(":");
+    lcd.setCursor(15, 3);
+    lcd.print("  ");
+    lcd.setCursor(17, 3);
+    lcd.print(":");
+    lcd.setCursor(18, 3);
+    lcd.print("  ");
   }
 
   void Reset()
@@ -258,7 +359,6 @@ public:
     lcd.print("Reiniciando...");
     delay(2000);
   }
-
 };
 
 #endif

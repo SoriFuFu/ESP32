@@ -3,7 +3,6 @@ import { Container, Row, Col } from 'react-bootstrap';
 import RelayCard from './RelayCard';
 
 const Panel = ({ Relay }) => {
-    console.log('Panel', Relay);
     return (
         <div>
             <Row className="mb-3">

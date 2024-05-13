@@ -23,9 +23,9 @@ const App = () => {
     }, []);
 
     const handleGetConfig = () => {
-        // const ws = new WebSocket('ws://192.168.1.38:81');
+        const ws = new WebSocket('ws://192.168.1.222:81');
         // const ws = new WebSocket('ws://192.168.4.1:81');
-        const ws = new WebSocket('ws://' + window.location.hostname + ':81');
+        // const ws = new WebSocket('ws://' + window.location.hostname + ':81');
         setWebSocket(ws);
         
         ws.onopen = () => {
@@ -59,17 +59,28 @@ const App = () => {
         setApStatus(status);
         console.log('hundleSetApStatus', status);
     };
-    const updateRelayApp = (relayName, status) => {
-        console.log(relayName, status);
-        setRelay(prevConfig => ({
-          ...prevConfig,
-          [relayName]: {
-            ...prevConfig[relayName],
-            active: status
-          }
-        }));
-        
-      };
+    const updateRelayApp = (relayName, statusOrName) => {
+        if (typeof statusOrName === 'boolean') {
+            // Actualizar estado del relé
+            setRelay(prevConfig => ({
+                ...prevConfig,
+                [relayName]: {
+                    ...prevConfig[relayName],
+                    active: statusOrName
+                }
+            }));
+        } else {
+            // Actualizar nombre del relé
+            setRelay(prevConfig => ({
+                ...prevConfig,
+                [relayName]: {
+                    ...prevConfig[relayName],
+                    name: statusOrName
+                }
+            }));
+        }
+    };
+    
 
       
     const hundleSetK1Enable = (status) => {
@@ -83,6 +94,19 @@ const App = () => {
     }
     const hundleSetK4Enable = (status) => {
         updateRelayApp('K4', status);
+    }
+
+    const hundleSetK1Name = (name) => {
+        updateRelayApp('K1', name);
+    }
+    const hundleSetK2Name = (name) => {
+        updateRelayApp('K2', name);
+    }
+    const hundleSetK3Name = (name) => {
+        updateRelayApp('K3', name);
+    }
+    const hundleSetK4Name = (name) => {
+        updateRelayApp('K4', name);
     }
 
 
@@ -102,7 +126,7 @@ const App = () => {
                         <Container fluid className="content">
                             <Routes>
                                 <Route path="/panel" element={<Panel Relay={relay} />} />
-                                <Route path="/config/*" element={<Config wifiConfig={wifiConfig} apConfig={apConfig} relay={relay} webSocket={webSocket} setWifiStatusApp={hundleSetWifiStatus} SetApStatusApp={hundleSetApStatus} setK1EnableApp={hundleSetK1Enable} setK2EnableApp={hundleSetK2Enable} setK3EnableApp={hundleSetK3Enable} setK4EnableApp={hundleSetK4Enable} />} />
+                                <Route path="/config/*" element={<Config wifiConfig={wifiConfig} apConfig={apConfig} relay={relay} webSocket={webSocket} setWifiStatusApp={hundleSetWifiStatus} SetApStatusApp={hundleSetApStatus} setK1EnableApp={hundleSetK1Enable} setK2EnableApp={hundleSetK2Enable} setK3EnableApp={hundleSetK3Enable} setK4EnableApp={hundleSetK4Enable} setK1NameApp={hundleSetK1Name} setK2NameApp={hundleSetK2Name} setK3NameApp={hundleSetK3Name} setK4NameApp={hundleSetK4Name}/>} />
                                 
                                 <Route path="*" element={<Navigate to="/panel" replace />} />
                             </Routes>

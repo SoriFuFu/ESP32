@@ -9,10 +9,9 @@ public:
     WifiConfig() {}
 
     // Método para conectar al WiFi utilizando un SSID y contraseña
-    void initWifi(const char *ssid, const char *password, IPAddress ip, IPAddress gateway, IPAddress subnet) //MÉTODO PARA INICIAR UNA CONEXIÓN WIFI
+    void initWifi(const char *ssid, const char *password, IPAddress ip, IPAddress subnet, IPAddress gateway) // MÉTODO PARA INICIAR UNA CONEXIÓN WIFI
     {
-  
-        WiFi.config(ip, gateway, subnet);
+
         WiFi.begin(ssid, password);
 
         Serial.print("Conectando a WiFi ");
@@ -34,7 +33,7 @@ public:
                 attempts = 0; // Reiniciar el contador de intentos
             }
         }
-
+        WiFi.config(ip, gateway, subnet);
         if (WiFi.status() == WL_CONNECTED)
         {
             Serial.println("");
@@ -42,34 +41,46 @@ public:
             Serial.println("IP estática configurada correctamente");
             Serial.print("IP: ");
             Serial.println(WiFi.localIP());
-            // Serial.print("Subnet: ");
-            // Serial.println(WiFi.subnetMask());
-            // Serial.print("Puerta de enlace: ");
-            // Serial.println(WiFi.gatewayIP());
+            Serial.print("Subnet: ");
+            Serial.println(WiFi.subnetMask());
+            Serial.print("Puerta de enlace: ");
+            Serial.println(WiFi.gatewayIP());
         }
     }
 
-    void initAP(const char *ssid, const char *password) //MÉTODO PARA INICIAR UN PUNTO DE ACCESO
+    void initAP(const char *ssid, const char *password) // MÉTODO PARA INICIAR UN PUNTO DE ACCESO
     {
         WiFi.softAP(ssid, password);
         Serial.println("Punto de acceso iniciado");
         Serial.print("IP: ");
         Serial.println(WiFi.softAPIP());
     }
-    
-    void setApSSID(const char *ssid) //MÉTODO PARA CAMBIAR EL NOMBRE DEL PUNTO DE ACCESO
+
+    void setApSSID(const char *ssid) // MÉTODO PARA CAMBIAR EL NOMBRE DEL PUNTO DE ACCESO
     {
         WiFi.softAP(ssid);
         Serial.println("Punto de acceso configurado");
     }
 
-    void initWifiPlus(const char *ssid, const char *password,IPAddress ip, IPAddress gateway, IPAddress subnet, const char *apSsid, const char *apPassword) //MÉTODO PARA INICIAR UNA CONEXIÓN WIFI Y UN PUNTO DE ACCESO
+    void initWifiPlus(const char *ssid, const char *password, IPAddress ip, IPAddress subnet, IPAddress gateway, const char *apSsid, const char *apPassword) // MÉTODO PARA INICIAR UNA CONEXIÓN WIFI Y UN PUNTO DE ACCESO
     {
-        initWifi(ssid, password, ip, subnet, gateway);  
-        initAP(apSsid, apPassword); 
+        initWifi(ssid, password, ip, subnet, gateway);
+        initAP(apSsid, apPassword);
     }
 
-    String searchNetworks() //MÉTODO PARA BUSCAR REDES DISPONIBLES
+    void changeStaticIP(IPAddress ip, IPAddress subnet, IPAddress gateway) // MÉTODO PARA CAMBIAR LA CONFIGURACIÓN DE LA DIRECCIÓN IP
+    {
+        WiFi.config(ip, gateway, subnet);
+        Serial.println("Configuración de IP estática cambiada");
+        Serial.print("IP: ");
+        Serial.println(WiFi.localIP());
+        Serial.print("Subnet: ");
+        Serial.println(WiFi.subnetMask());
+        Serial.print("Puerta de enlace: ");
+        Serial.println(WiFi.gatewayIP());
+    }
+   
+    String searchNetworks() // MÉTODO PARA BUSCAR REDES DISPONIBLES
     {
         DynamicJsonDocument doc(1024);
         JsonArray networksArray = doc.createNestedArray("networks");
@@ -85,60 +96,60 @@ public:
         return networksJson;
     }
 
-    String getConnectedSSID() //MÉTODO PARA OBTENER EL NOMBRE DE LA RED A LA QUE ESTÁ CONECTADO EL DISPOSITIVO
+    String getConnectedSSID() // MÉTODO PARA OBTENER EL NOMBRE DE LA RED A LA QUE ESTÁ CONECTADO EL DISPOSITIVO
     {
         return WiFi.SSID();
     }
 
-    IPAddress getAPIP() //MÉTODO PARA OBTENER LA DIRECCIÓN IP DEL PUNTO DE ACCESO
+    IPAddress getAPIP() // MÉTODO PARA OBTENER LA DIRECCIÓN IP DEL PUNTO DE ACCESO
     {
         return WiFi.softAPIP();
     }
 
-    IPAddress getIPAddress() //MÉTODO PARA OBTENER LA DIRECCIÓN IP DEL DISPOSITIVO
+    IPAddress getIPAddress() // MÉTODO PARA OBTENER LA DIRECCIÓN IP DEL DISPOSITIVO
     {
         return WiFi.localIP();
     }
 
-    IPAddress getSubnetMask() //MÉTODO PARA OBTENER LA MÁSCARA DE SUBRED
+    IPAddress getSubnetMask() // MÉTODO PARA OBTENER LA MÁSCARA DE SUBRED
     {
         return WiFi.subnetMask();
     }
 
-    IPAddress getGatewayIP() //MÉTODO PARA OBTENER LA PUERTA DE ENLACE
+    IPAddress getGatewayIP() // MÉTODO PARA OBTENER LA PUERTA DE ENLACE
     {
         return WiFi.gatewayIP();
     }
 
-    String getMACAddress() //MÉTODO PARA OBTENER LA DIRECCIÓN MAC DEL DISPOSITIVO
+    String getMACAddress() // MÉTODO PARA OBTENER LA DIRECCIÓN MAC DEL DISPOSITIVO
     {
         return WiFi.macAddress();
     }
 
-    int getSignalStrength() //MÉTODO PARA OBTENER LA POTENCIA DE LA SEÑAL
+    int getWifiSignal() // MÉTODO PARA OBTENER LA POTENCIA DE LA SEÑAL
     {
         return WiFi.RSSI();
     }
 
-    void disconnectWifi() //MÉTODO PARA DESCONECTAR EL DISPOSITIVO DE LA RED WIFI
+    void disconnectWifi() // MÉTODO PARA DESCONECTAR EL DISPOSITIVO DE LA RED WIFI
     {
         WiFi.disconnect();
         Serial.println("WiFi desconectado");
     }
 
-    void stopAP() //MÉTODO PARA DETENER EL PUNTO DE ACCESO
+    void stopAP() // MÉTODO PARA DETENER EL PUNTO DE ACCESO
     {
         WiFi.softAPdisconnect(true);
         Serial.println("AP Desconectada");
     }
 
-    void reconnect() //MÉTODO PARA RECONECTAR EL DISPOSITIVO A LA RED WIFI
+    void reconnect() // MÉTODO PARA RECONECTAR EL DISPOSITIVO A LA RED WIFI
     {
         WiFi.reconnect();
         Serial.println("WiFi reconectado");
     }
 
-    bool verifyWifiConnection() //MÉTODO PARA VERIFICAR SI EL DISPOSITIVO ESTÁ CONECTADO A UNA RED WIFI
+    bool verifyWifiConnection() // MÉTODO PARA VERIFICAR SI EL DISPOSITIVO ESTÁ CONECTADO A UNA RED WIFI
     {
         if (WiFi.status() == WL_CONNECTED)
         {
@@ -149,8 +160,8 @@ public:
             return false;
         }
     }
-    
-    bool verifyAPConnection() //MÉTODO PARA VERIFICAR SI HAY ALGÚN DISPOSITIVO CONECTADO AL PUNTO DE ACCESO
+
+    bool verifyAPConnection() // MÉTODO PARA VERIFICAR SI HAY ALGÚN DISPOSITIVO CONECTADO AL PUNTO DE ACCESO
     {
         if (WiFi.softAPgetStationNum() > 0)
         {
@@ -161,7 +172,6 @@ public:
             return false;
         }
     }
-
 };
 
 #endif

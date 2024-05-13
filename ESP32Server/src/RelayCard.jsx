@@ -1,131 +1,284 @@
-import React, { useState } from 'react';
-import { Card, Form, Button, Row, Col } from 'react-bootstrap';
-import { FaPowerOff } from 'react-icons/fa';
+import React, { useEffect, useState } from 'react';
+import { Card, Button, Modal, Form, Row, Col } from 'react-bootstrap';
+import { MdTimer, MdTimerOff } from "react-icons/md";
+import { FaPlay, FaPause, FaPowerOff, FaStop } from 'react-icons/fa';
+import { act } from 'react';
 
 const RelayCard = ({ relay, relayKey }) => {
     const [isOn, setIsOn] = useState(false);
-    const [relayData, setRelayData] = useState(relay.mode);
-    const [hours, setHours] = useState(0);
-    const [minutes, setMinutes] = useState(0);
+    const [remainingTime, setRemainingTime] = useState(relay.timer);
+    const [relayState, setRelayState] = useState(relay.state);
+    const [showModal, setShowModal] = useState(false);
+    const [selectedTime, setSelectedTime] = useState(relay.timer);
+    const [webSocket, setWebSocket] = useState(null);
+    const [relayData, setRelayData] = useState(null);
+    const [timerStatus, setTimerStatus] = useState(relay.timerStatus);
 
-    const handleToggle = () => {
-        setIsOn(!isOn);
-    };
+    useEffect(() => {
+        let ws;
+        const connectWebSocket = () => {
+            // if (relayKey === 'K1') {
+            //     ws = new WebSocket('ws://' + window.location.hostname + ':83');
+            // } else if (relayKey === 'K2') {
+            //     ws = new WebSocket('ws://' + window.location.hostname + ':84');
+            // } else if (relayKey === 'K3') {
+            //     ws = new WebSocket('ws://' + window.location.hostname + ':85');
+            // } else if (relayKey === 'K4') {
+            //     ws = new WebSocket('ws://' + window.location.hostname + ':86');
+            // }
 
-    const handleIncrementMinutes = (increment) => {
-        setMinutes((prevMinutes) => {
-            let newMinutes = prevMinutes + increment;
-            if (newMinutes < 0) {
-                newMinutes = 59;
-            } else if (newMinutes > 59) {
-                newMinutes = 0;
+            if (relayKey === 'K1') {
+                ws = new WebSocket('ws://192.168.1.222:83');
+            } else if (relayKey === 'K2') {
+                ws = new WebSocket('ws://192.168.1.222:84');
+            } else if (relayKey === 'K3') {
+                ws = new WebSocket('ws://192.168.1.222:85');
+            } else if (relayKey === 'K4') {
+                ws = new WebSocket('ws://192.168.1.222:86');
             }
-            return newMinutes;
-        });
-    };
 
-    const handleIncrementHours = (increment) => {
-        setHours((prevHours) => {
-            let newHours = prevHours + increment;
-            if (newHours < 0) {
-                newHours = 23;
-            } else if (newHours > 23) {
-                newHours = 0;
+
+            ws.onopen = () => {
+                setWebSocket(ws);
+            };
+            // ws.onmessage = (event) => {
+            //     const data = JSON.parse(event.data);
+            //     setRelayData(data); // Almacenar los datos recibidos en el estado local
+            // };
+
+            ws.onclose = () => {
+                connectWebSocket(); // Reintentar conexión
+            };
+        };
+
+        connectWebSocket();
+
+        return () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
             }
-            return newHours;
-        });
-    };
+        };
+    }, []);
 
-    const handleHoursChange = (event) => {
-        setHours(parseInt(event.target.value));
-    };
+    useEffect(() => {
+        if (webSocket) {
+            webSocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.action === 'UPDATE_TIMER') {
+                    setRemainingTime(data.time);
+                }
+                else if (data.action === 'UPDATE_TIMER_STATUS') {
+                    setTimerStatus(data.status);
+                }
+                else if (data.action === 'ON') {
+                    setIsOn(true);
+                    setRelayState('ON');
+                } else if (data.action === 'ACTIVE') {
+                    setRelayState('ACTIVE');
+                } else if (data.action === 'PAUSE') {
+                    setRelayState('PAUSE');
+                    console.log('PAUSE');
+                } else if (data.action === 'CONTINUE') {
+                    setRelayState('ACTIVE');
+                } else if (data.action === 'INACTIVE') {
+                    setRelayState('INACTIVE');
+                } else if (data.action === 'OFF') {
+                    setIsOn(false);
+                    setRelayState('OFF');
+                }
 
-    const handleMinutesChange = (event) => {
-        setMinutes(parseInt(event.target.value));
-    };
+            };
+        }
+    }, [webSocket]);
 
-    const renderModeContent = () => {
-        switch (relayData) {
-            case "1": // Temporizador regresivo
-                return (
-                    <>
+    useEffect(() => {
 
-                        {/* Contador interactivo para modificar el tiempo regresivo */}
-                        <Form.Group as={Row} className="mb-3">
-                            <Form.Label column sm={3}>Tiempo Regresivo</Form.Label>
-                            <Col sm={9}>
-                                <div className="d-flex align-items-center">
-                                    <Button variant="outline-secondary" onClick={() => handleIncrementHours(-1)}> - </Button>
-                                    <Form.Control type="number" value={hours} onChange={handleHoursChange} className="mx-2" />
-                                    <Button variant="outline-secondary" onClick={() => handleIncrementHours(1)}> + </Button>
-                                    <span className="mx-2">:</span>
-                                    <Button variant="outline-secondary" onClick={() => handleIncrementMinutes(-1)}> - </Button>
-                                    <Form.Control type="number" value={minutes} onChange={handleMinutesChange} className="mx-2" />
-                                    <Button variant="outline-secondary" onClick={() => handleIncrementMinutes(1)}> + </Button>
-                                </div>
-                            </Col>
-                        </Form.Group>
-                    </>
-                );
+        if (remainingTime === 0) {
+            setRelayState('INACTIVE');
+            setIsOn(false);
+            setRemainingTime(selectedTime);
+        }
+    }, [remainingTime]);
 
-            case "2": // Programación diaria
-                return (
-                    <>
+    useEffect(() => {
+        console.log('RelayState:', relayState);
+    }
+        , [relayState]);
 
-                        {/* Checkboxes para los días de la semana */}
-                        <Form.Group as={Row} className="mb-3">
-                            <Form.Label column sm={3}>Días</Form.Label>
-                            <Col sm={9}>
-                                <Form.Check inline label="Lunes" type="checkbox" id="inline-checkbox-1" />
-                                <Form.Check inline label="Martes" type="checkbox" id="inline-checkbox-2" />
-                                <Form.Check inline label="Miércoles" type="checkbox" id="inline-checkbox-3" />
-                                <Form.Check inline label="Jueves" type="checkbox" id="inline-checkbox-4" />
-                                <Form.Check inline label="Viernes" type="checkbox" id="inline-checkbox-5" />
-                                <Form.Check inline label="Sábado" type="checkbox" id="inline-checkbox-6" />
-                                <Form.Check inline label="Domingo" type="checkbox" id="inline-checkbox-7" />
-                            </Col>
-                        </Form.Group>
-                        {/* Campos para las horas de inicio y fin */}
-                        <Form.Group as={Row} className="mb-3">
-                            <Form.Label column sm={3}>Hora de inicio</Form.Label>
-                            <Col sm={9}>
-                                <Form.Control type="time" />
-                            </Col>
-                        </Form.Group>
-                        <Form.Group as={Row} className="mb-3">
-                            <Form.Label column sm={3}>Hora de fin</Form.Label>
-                            <Col sm={9}>
-                                <Form.Control type="time" />
-                            </Col>
-                        </Form.Group>
-                    </>
-                );
-            
-            case "3": // Enclavamiento
-                return (
-                    <Button variant={relay.state ? "success" : "danger"} className="power-button rounded-circle" onClick={handleToggle}>
-                        <FaPowerOff />
-                    </Button>
-                );
-            case "4": // Activación por Eventos Externos
-                return null; // No hay contenido para este modo
-            default:
-                return null;
+    // FUNCION PARA CAMBIAR EL ESTADO DEL RELÉ SIN TIMER
+    const hundleRelayChange = (action) => { 
+        if (action === 'ON') {
+            setIsOn(true);
+        }
+        if (action === 'OFF') {
+            setIsOn(false);
+        }
+
+        if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+            let message = { action: action };
+            webSocket.send(JSON.stringify(message));
+        } else {
+            console.log('WebSocket no está completamente abierto');
         }
     };
+
+    // FUNCION PARA CAMBIAR EL ESTADO DEL RELÉ CON TIMER
+    const hundleRelayTimer = () => {
+        let action;
+        if (relayState === 'ACTIVE') {
+            setRelayState('PAUSE');
+            action = 'PAUSE';
+        } else if (relayState === 'PAUSE') {
+            setRelayState('ACTIVE');
+            action = 'CONTINUE';
+        } else if (relayState === 'INACTIVE') {
+            setRelayState('ACTIVE');
+            action = 'ACTIVE';
+            setIsOn(true);
+        }
+        if (webSocket) {
+            let message = { action: action, selectedTime: remainingTime };
+            webSocket.send(JSON.stringify(message));
+        }
+        else {
+            console.log('WebSocket no está inicializado');
+        }
+    };
+
+    const renderIcon = () => {
+        return relayState === 'ACTIVE' ? <FaPause /> : <FaPlay />;
+    };
+
+    // FUNCIONES PARA EL MODAL
+    const handleModalClose = () => {
+        setShowModal(false);
+    };
+
+    const handleModalShow = () => {
+        setShowModal(true);
+    };
+
+    // FUNCION PARA SELECCIONAR EL TIEMPO
+    const handleTimeSelection = () => {
+        setTimerStatus(true);
+        if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+            setRemainingTime(selectedTime);
+            setShowModal(false);
+            setRelayState('INACTIVE');
+            let message = { action: 'SET_TIMER', timerStatus: true, selectedTime: selectedTime };
+            webSocket.send(JSON.stringify(message));
+        } else {
+            console.log('WebSocket no está inicializado');
+        }
+
+    };
+
+    const handleTimerOff = () => {
+        setTimerStatus(false);
+        if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+            let message = { action: 'SET_TIMER', timerStatus: false, selectedTime: selectedTime };
+            webSocket.send(JSON.stringify(message));
+            setShowModal(false);
+        } else {
+            console.log('WebSocket no está inicializado');
+        }
+    }
 
     return (
         <Card>
             <Card.Body>
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <Card.Title>{relay.name}</Card.Title>
-                    {/* Botón de encendido/apagado */}
-                    <Button variant={isOn ? 'success' : 'danger'} onClick={handleToggle} className='rounded-circle'>
+                    {!timerStatus && (<Button
+                        variant={isOn ? 'success' : 'danger'}
+                        onClick={() => hundleRelayChange(isOn ? 'OFF' : 'ON')}
+                        className='d-flex justify-content-center align-items-center rounded-circle'
+                        style={{ width: '40px', height: '40px' }}
+                    >
                         <FaPowerOff />
-                    </Button>
+                    </Button>)}
                 </div>
-                {/* Contenido del modo de funcionamiento */}
-                {renderModeContent()}
+
+                <>
+                    <Row className="d-flex justify-content-between align-items-center mt-3">
+                        {/* Botón de temporizador */}
+                        <Col xs={3} md={3} >
+                            <Button variant="warning" onClick={handleModalShow} >{timerStatus ? (<MdTimer />) : (<MdTimerOff />)}</Button>
+                        </Col>
+                        {timerStatus ? (
+                            <>
+                                {/* Contador */}
+                                <Col xs={6} md={6} className="text-center fs-3">
+                                    <div className="mx-3">
+                                        <span>{`${Math.floor(remainingTime / 3600000).toString().padStart(2, '0')}:${Math.floor((remainingTime % 3600000) / 60000).toString().padStart(2, '0')}:${Math.floor((remainingTime % 60000) / 1000).toString().padStart(2, '0')}`}</span>
+                                    </div>
+                                </Col>
+                                {/* Botón de encendido/apagado */}
+                                <Col xs={3} md={3} className="d-flex justify-content-right" >
+                                    <Button variant="success"
+                                        onClick={() => { hundleRelayTimer() }}
+                                    >
+                                        {renderIcon()}
+                                    </Button>
+                                    {relayState === 'ACTIVE' && (
+                                        <Button variant="danger" onClick={() => hundleRelayChange('INACTIVE')} className='d-flex justify-content-center align-items-center ms-2' style={{ width: '40px', height: '40px' }}>
+                                            <FaStop />
+                                        </Button>
+                                    )}
+                                </Col>
+                            </>
+
+                        ) : (<>
+
+                        </>)
+                        }
+                    </Row>
+                    {/* Modal para seleccionar el tiempo */}
+                    <Modal show={showModal} onHide={handleModalClose}>
+                        <Modal.Header closeButton>
+                            <Modal.Title>Seleccionar Tiempo</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <Form>
+                                <Row className="align-items-center">
+                                    <Col xs={9} sm={9}>
+                                        <Form.Control
+                                            type="range"
+                                            className='form-range'
+                                            value={selectedTime}
+                                            min={0}
+                                            max={7200000} // Máximo de 2 horas en milisegundos
+                                            step={60000} // Pasos de 1 segundo
+                                            onChange={(e) => setSelectedTime(parseInt(e.target.value))}
+                                        />
+                                    </Col>
+                                    <Col xs={3} sm={3}>
+                                        <Form.Control
+                                            type="text"
+                                            readOnly
+                                            value={`${Math.floor(selectedTime / 3600000).toString().padStart(2, '0')}:${Math.floor((selectedTime % 3600000) / 60000).toString().padStart(2, '0')}`}
+                                        />
+                                    </Col>
+
+                                </Row>
+                            </Form>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            {timerStatus && (
+                                <Button variant="secondary" onClick={handleTimerOff}>
+                                    Desactivar
+                                </Button>
+                            )}
+                            <Button variant="secondary" onClick={handleModalClose}>
+                                Cancelar
+                            </Button>
+                            <Button variant="primary" onClick={handleTimeSelection}>
+                                Hecho
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
+                </>
+
             </Card.Body>
         </Card>
     );

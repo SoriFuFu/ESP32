@@ -28,7 +28,7 @@ const Menu = ({ wifiStatus, apStatus }) => {
                     <Col md={12}>
                         <div className="d-flex justify-content-between align-items-center">
                             <div>
-                                <Link to="/panel" className="menu-link ms-3 me-3">
+                                <Link to="/" className="menu-link ms-3 me-3">
                                     <BsHouseDoor className="menu-icon" />
                                 </Link>
                                 <Link to="/config" className="menu-link ms-3">

@@ -1,13 +1,19 @@
 {
+    "Device": {
+        "name": "BaBuIoT",
+        "version": "1.0.0",
+        "status": "ACTIVE",
+        "lastUpdate": "2021-09-01 12:00:00"
+    },
     "Wifi": {
         "active": true,
         "status": true,
-        "ssid": "Tarta-D",
+        "ssid": "manzana",
         "password": "OliviaPampo2024...",
-        "staticIp": true,
-        "ip": "192.168.1.38",
+        "ip": "192.168.1.222",
         "subnet": "255.255.255.0",
-        "gateway": "192.168.1.1"
+        "gateway": "192.168.1.1",
+        "mac": "24:0A:C4:00:00:00"
     },
     "MQTT": {
         "active": true,
@@ -30,40 +36,36 @@
     },
     "Relay": {
         "K1": {
-            "active": false,
-            "mode": "1",
+            "active": true,
+            "timerStatus": false,
             "name": "Dispositivo1",
-            "state": true,
-            "timer": 60,
-            "activationTime": 3600,
-            "deactivationTime": 7200
+            "state": "INACTIVE",
+            "timerSelected": 0,
+            "timer": 0
         },
         "K2": {
-            "active": false,
-            "mode": "1",
+            "active": true,
+            "timerStatus": false,
             "name": "Dispositivo2",
-            "state": false,
-            "timer": 60,
-            "activationTime": 3600,
-            "deactivationTime": 7200
+            "state": "INACTIVE",
+            "timerSelected": 0,
+            "timer": 0
         },
         "K3": {
             "active": false,
-            "mode": "1",
+            "timerStatus": false,
             "name": "Dispositivo3",
-            "state": true,
-            "timer": 60,
-            "activationTime": 3600,
-            "deactivationTime": 7200
+            "state": "INACTIVE",
+            "timerSelected": 0,
+            "timer": 0
         },
         "K4": {
             "active": false,
-            "mode": "1",
+            "timerStatus": false,
             "name": "Dispositivo4",
-            "state": false,
-            "timer": 60,
-            "activationTime": 3600,
-            "deactivationTime": 7200
+            "state": "INACTIVE",
+            "timerSelected": 0,
+            "timer": 0
         }
     }
 }

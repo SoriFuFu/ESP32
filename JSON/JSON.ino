@@ -8,46 +8,55 @@
 #include <ESPAsyncWebServer.h>
 #include <WebSocketsServer.h>
 
-ConfigManager config;
-WifiConfig wifiConfig;
+ConfigManager config;                                    // OBJETO DE LA CLASE ConfigManager
+WifiConfig wifiConfig;                                   // OBJETO DE LA CLASE WifiConfig
+Pantalla displayLCD(LCD_ADDR, SDA, SCL);                 // OBJETO DE LA PANTALLA LCD
+Adafruit_BMP280 bmp;                                     // OBJETO DEL SENSOR BMP280
+WebSocketsServer webSocketConfig = WebSocketsServer(81); // OBJETO DEL SERVIDOR WEBSOCKET PARA LA CONFIGURACIÓN
+WebSocketsServer webSocketData = WebSocketsServer(82);   // OBJETO DEL SERVIDOR WEBSOCKET PARA LOS DATOS DE SENSORES Y HORA
+WebSocketsServer webSocketK1 = WebSocketsServer(83);     // OBJETO DEL SERVIDOR WEBSOCKET PARA K1
+WebSocketsServer webSocketK2 = WebSocketsServer(84);     // OBJETO DEL SERVIDOR WEBSOCKET PARA K2
+WebSocketsServer webSocketK3 = WebSocketsServer(85);     // OBJETO DEL SERVIDOR WEBSOCKET PARA K3
+WebSocketsServer webSocketK4 = WebSocketsServer(86);     // OBJETO DEL SERVIDOR WEBSOCKET PARA K4
+AsyncWebServer server(80);                               // OBJETO DEL SERVIDOR HTTP
 
-#define INTERVALODELECTURA 1000 // INTERVALO DE ACTULIZACIÓN
-#define BMP280_ADDR 0x76        // DIRECCIÓN DEL SENSOR BMP280
+#define INTERVALODELECTURA10SEG 10000 // INTERVALO DE ACTULIZACIÓN DE 1 SEGUNDO
+#define INTERVALODELECTURA1SEG 1000 // INTERVALO DE ACTULIZACIÓN DE 1 SEGUNDO
+#define INTERVALODELECTURA05SEG 500 // INTERVALO DE ACTULIZACIÓN
+#define BMP280_ADDR 0x76            // DIRECCIÓN DEL SENSOR BMP280
+#define LED 25                      // PIN PARA EL LED
 // VARIABLES DE ENTRADA
-#define OK 33     // PIN PARA EL BOTÓN DE OK
-#define UP 14     // PIN PARA EL BOTÓN DE UP
-#define DOWN 15   // PIN PARA EL BOTÓN DE DOWN
-#define LEFT 12   // PIN PARA EL BOTÓN DE LEFT
-#define RIGHT 32  // PIN PARA EL BOTÓN DE DERECHA
-#define BTN_K1 22 // PIN PARA EL BOTÓN DE K1
-#define BTN_K2 13 // PIN PARA EL BOTÓN DE K2
-#define BTN_K3 27 // PIN PARA EL BOTÓN DE K3
-#define BTN_K4 26 // PIN PARA EL BOTÓN DE K4
+#define OK 35     // PIN PARA EL BOTÓN DE OK
+#define UP 12     // PIN PARA EL BOTÓN DE UP
+#define DOWN 32   // PIN PARA EL BOTÓN DE DOWN
+#define LEFT 15   // PIN PARA EL BOTÓN DE LEFT
+#define RIGHT 14  // PIN PARA EL BOTÓN DE DERECHA
+#define BTN_K1 23 // PIN PARA EL BOTÓN DE K1
+#define BTN_K2 27 // PIN PARA EL BOTÓN DE K2
+#define BTN_K3 36 // PIN PARA EL BOTÓN DE K3
+#define BTN_K4 34 // PIN PARA EL BOTÓN DE K4
 #define RESET 33  // PIN PARA EL BOTÓN DE RESET
+#define D1 22     // PIN PARA EL BOTÓN DATA 1
+#define D2 26     // PIN PARA EL BOTÓN DATA 2
+#define D3 13     // PIN PARA EL BOTÓN DATA 3
 
 // VARIABLES DE SALIDA
-#define K1 21 // relay PARA EL RIEGO EXTERIOR
-#define K2 19 // relay PARA EL RIEGO INTERIOR
-#define K3 18 // relay PARA UNA SALIDA LIBRE
-#define K4 5  // relay PARA UNA SALIDA LIBRE
+#define K1 21 // RELÉ K1
+#define K2 19 // RELÉ K2
+#define K3 18 // RELÉ K3
+#define K4 5  // RELÉ K4
 
 // CREAR OBJETOS DE LA CLASE BOUNCE PARA CADA BOTÓN
-Bounce btnOk = Bounce();
-Bounce btnUp = Bounce();
-Bounce btnDown = Bounce();
-Bounce btnLeft = Bounce();
-Bounce btnRight = Bounce();
-Bounce btnK1 = Bounce();
-Bounce btnK2 = Bounce();
-Bounce btnK3 = Bounce();
-Bounce btnK4 = Bounce();
+Bounce btnOk = Bounce();    // OK
+Bounce btnUp = Bounce();    // ARRIBA
+Bounce btnDown = Bounce();  // ABAJO
+Bounce btnLeft = Bounce();  // IZQUIERDA
+Bounce btnRight = Bounce(); // DERECHA
+Bounce btnK1 = Bounce();    // BOTÓN DE K1
+Bounce btnK2 = Bounce();    // BOTÓN DE K2
+Bounce btnK3 = Bounce();    // BOTÓN DE K3
+Bounce btnK4 = Bounce();    // BOTÓN DE K4
 Bounce btnReset = Bounce(); // BOTÓN DE RESET
-
-Pantalla displayLCD(LCD_ADDR, SDA, SCL);
-Adafruit_BMP280 bmp;
-
-WebSocketsServer webSocketConfig = WebSocketsServer(81);
-AsyncWebServer server(80); // Objeto del servidor HTTP
 
 // ESTADOS DEL RIEGO
 enum RelayState
@@ -55,7 +64,8 @@ enum RelayState
   INACTIVE,
   WAITING,
   ACTIVE,
-  PAUSED,
+  PAUSE,
+  ON,
   OFF
 };
 
@@ -64,18 +74,40 @@ RelayState K1State = INACTIVE;
 RelayState K2State = INACTIVE;
 RelayState K3State = INACTIVE;
 RelayState K4State = INACTIVE;
+
+// VARIABLES PARA EL CONTADOR APAGADO/ENCENDIDO
 bool K1Timer = false;
 bool K2Timer = false;
 bool K3Timer = false;
 bool K4Timer = false;
+
+bool stateK1Timer = false;
+bool stateK2Timer = false;
+bool stateK3Timer = false;
+bool stateK4Timer = false;
+// VARIABLES PARA EL TIEMPO RESTANTE
 unsigned long remainingTimeK1 = 0;
 unsigned long remainingTimeK2 = 0;
 unsigned long remainingTimeK3 = 0;
 unsigned long remainingTimeK4 = 0;
-unsigned long selectedTimeK1 = 0;
-unsigned long selectedTimeK2 = 0;
-unsigned long selectedTimeK3 = 0;
-unsigned long selectedTimeK4 = 0;
+
+int menuPage = 1; // PÁGINA DEL DISPLAY
+
+void getConfigData()
+{
+  remainingTimeK1 = config.getK1TimerSelected();
+  remainingTimeK2 = config.getK2TimerSelected();
+  remainingTimeK3 = config.getK3TimerSelected();
+  remainingTimeK4 = config.getK4TimerSelected();
+  config.setK1Timer(remainingTimeK1);
+  config.setK2Timer(remainingTimeK2);
+  config.setK3Timer(remainingTimeK3);
+  config.setK4Timer(remainingTimeK4);
+  LCD_UpdateK1Timer();
+  LCD_UpdateK2Timer();
+  LCD_UpdateK3Timer();
+  LCD_UpdateK4Timer();
+}
 
 void setup()
 {
@@ -110,7 +142,7 @@ void setup()
     IPAddress ip = config.getWifiIP();
     IPAddress subnet = config.getWifiSubnet();
     IPAddress gateway = config.getWifiGateway();
-    wifiConfig.initWifi(wifiSSID.c_str(), wifiPassword.c_str(), ip, gateway, subnet);
+    wifiConfig.initWifi(wifiSSID.c_str(), wifiPassword.c_str(), ip, subnet, gateway);
     displayLCD.printWifi();
   }
   else if (!wifiActive && apActive) // Inicializar AP
@@ -124,9 +156,26 @@ void setup()
 
   //***** CONFIGURAR EL CANAL WEBSOCKET PARA LA CONFIGURACIÓN
   webSocketConfig.begin();
+  webSocketData.begin();
+  webSocketK1.begin();
+  webSocketK2.begin();
+  webSocketK3.begin();
+  webSocketK4.begin();
+
+  //***** CONFIGURAR LOS EVENTOS DEL WEBSOCKET
   webSocketConfig.onEvent(webSocketEventConfig);
+  webSocketData.onEvent(webSocketEventData);
+  webSocketK1.onEvent(webSocketEventK1);
+  webSocketK2.onEvent(webSocketEventK2);
+  webSocketK3.onEvent(webSocketEventK3);
+  webSocketK4.onEvent(webSocketEventK4);
+
+  //***** CONFIGURAR EL SERVIDOR HTTP
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(SPIFFS, "/index.html", "text/html"); });
+  server.onNotFound([](AsyncWebServerRequest *request)
+                    { request->send(SPIFFS, "/index.html", "text/html"); });
+
   server.serveStatic("/", SPIFFS, "/");
 
   //***** INICIAR EL SERVIDOR HTTP
@@ -144,7 +193,7 @@ void setup()
   }
 
   //***** CONFIGURACIÓN DE LOS BOTONES DE ENTRADA
-  btnOk.attach(OK, INPUT_PULLUP);         // RESET COMO PULLUP
+  btnOk.attach(OK, INPUT_PULLDOWN);       // RESET COMO PULLUP
   btnUp.attach(UP, INPUT_PULLDOWN);       // UP COMO PULLDOWN
   btnDown.attach(DOWN, INPUT_PULLDOWN);   // DOWN COMO PULLDOWN
   btnLeft.attach(LEFT, INPUT_PULLDOWN);   // LEFT COMO PULLDOWN
@@ -153,10 +202,10 @@ void setup()
   btnK2.attach(BTN_K2, INPUT_PULLDOWN);   // ENTRADA BOTON K2 COMO PULLDOWN
   btnK3.attach(BTN_K3, INPUT_PULLDOWN);   // ENTRADA BOTON K3 COMO PULLDOWN
   btnK4.attach(BTN_K4, INPUT_PULLDOWN);   // ENTRADA BOTON K4 COMO PULLDOWN
-  btnReset.attach(RESET, INPUT_PULLUP);   // ENTRADA BOTON RESET COMO PULLUP
+  btnReset.attach(RESET, INPUT_PULLDOWN); // ENTRADA BOTON RESET COMO PULLUP
 
   //***** ESTABLECER EL TIEMPO DE REBOTE DE CADA BOTÓN
-  btnOk.interval(20);
+  btnOk.interval(50);
   btnUp.interval(10);
   btnDown.interval(20);
   btnLeft.interval(20);
@@ -168,21 +217,90 @@ void setup()
   btnReset.interval(20);
 
   //***** CONFIGURACIÓN DE LOS RELÉS DE SALIDA Y ESTABLECERLOS EN BAJO
+  pinMode(LED, OUTPUT);
   pinMode(K1, OUTPUT);
   pinMode(K2, OUTPUT);
   pinMode(K3, OUTPUT);
   pinMode(K4, OUTPUT);
+  digitalWrite(LED, HIGH);
   digitalWrite(K1, LOW);
   digitalWrite(K2, LOW);
   digitalWrite(K3, LOW);
   digitalWrite(K4, LOW);
+  config.setK1State("INACTIVE");
+  config.setK2State("INACTIVE");
+  config.setK3State("INACTIVE");
+  config.setK4State("INACTIVE");
 
   //***** CONFIGURAR LA HORA CON UN SERVIDOR NTP
   configTime(3600, 0, "pool.ntp.org");
+
+  setMenuPage();
+  getConfigData();
+
+  config.setMacAddress(wifiConfig.getMACAddress());
+
+
 }
 
-// Función para manejar los eventos del WebSocket de configuración
-void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
+//***** FUNCIONES PARA EL WEB SERVER
+void updateClientConfig() // ACTUALIZAR LA CONFIGURACIÓN DEL CLIENTE
+{
+  // Enviar la configuración actual al cliente
+  String configJson;
+  serializeJson(config.getConfigDoc(), configJson);
+  webSocketConfig.broadcastTXT(configJson);
+}
+
+void sendRemainingTime(long remainingTime, WebSocketsServer &webSocket) // ENVIAR EL TIEMPO RESTANTE
+{
+  StaticJsonDocument<100> jsonDocument;
+  jsonDocument["action"] = "UPDATE_TIMER";
+  jsonDocument["time"] = remainingTime;
+
+  char jsonString[100];
+  serializeJson(jsonDocument, jsonString);
+
+  // Envía la cadena JSON a través del WebSocket
+  webSocket.broadcastTXT(jsonString);
+}
+void sendTimerStatus(bool timerStatus, WebSocketsServer &webSocket) // ENVIAR EL ESTADO DEL TEMPORIZADOR
+{
+  StaticJsonDocument<100> jsonDocument;
+  jsonDocument["action"] = "UPDATE_TIMER_STATUS";
+  jsonDocument["status"] = timerStatus;
+
+  char jsonString[100];
+  serializeJson(jsonDocument, jsonString);
+
+  // Envía la cadena JSON a través del WebSocket
+  webSocket.broadcastTXT(jsonString);
+}
+void sendRelayStatus(String status, WebSocketsServer &webSocket) // ENVIAR EL ESTADO DEL RELÉ
+{
+  StaticJsonDocument<100> jsonDocument;
+  jsonDocument["action"] = status;
+  char jsonString[100];
+  serializeJson(jsonDocument, jsonString);
+
+  // Envía la cadena JSON a través del WebSocket
+  webSocket.broadcastTXT(jsonString);
+}
+void sendData() // ENVIAR LA SEÑAL DE WIFI
+{
+  StaticJsonDocument<100> jsonDocument;
+  jsonDocument["action"] = "UPDATE_WIFI_RSSI";
+  jsonDocument["rssi"] = wifiConfig.getWifiSignal();
+  jsonDocument["temperature"] = bmp.readTemperature();
+
+  char jsonString[100];
+  serializeJson(jsonDocument, jsonString);
+
+  // Envía la cadena JSON a través del WebSocket
+  webSocketData.broadcastTXT(jsonString);
+}
+
+void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t length) // FUNCION PARA MANEJAR LOS EVENTOS DEL WEBSOCKET DE CONFIGURACIÓN
 {
   if (type == WStype_TEXT)
   {
@@ -330,205 +448,354 @@ void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t l
   {
     Serial.println("Cliente conectado");
   }
-  else if (type == WStype_DISCONNECTED)
+}
+
+void webSocketEventData(uint8_t num, WStype_t type, uint8_t *payload, size_t length) // FUNCION PARA MANEJAR LOS EVENTOS DEL WEBSOCKET DE DATOS
+{
+  if (type == WStype_CONNECTED)
   {
-    Serial.println("Cliente desconectado");
+    Serial.println("Cliente conectado");
   }
 }
 
-void updateClientConfig()
+void webSocketEventK1(uint8_t num, WStype_t type, uint8_t *payload, size_t length) // FUNCION PARA MANEJAR LOS EVENTOS DEL WEBSOCKET DE K1
 {
-  // Enviar la configuración actual al cliente
-  String configJson;
-  serializeJson(config.getConfigDoc(), configJson);
-  webSocketConfig.broadcastTXT(configJson);
-  Serial.println("Enviando configuración al cliente");
-}
-void sendMessage(String message)
-{
-  webSocketConfig.broadcastTXT(message);
-}
-void loop()
-{
-  webSocketConfig.loop();
-  // RETARDO DE 1 SEGUNDO
-  unsigned long tiempoActual = millis();
-  static unsigned long ultimoTiempo = 0;
-  if (tiempoActual - ultimoTiempo >= INTERVALODELECTURA)
+  if (type == WStype_CONNECTED)
   {
-    ultimoTiempo = tiempoActual; // Actualizar el tiempo de la última lectura
-                                 //*** ***//
-    getTime();                   // ACTUALIZAR LA HORA
-    getTemperature();            // ACTUALIZAR LA TEMPERATURA
+    // Serial.println("Cliente K1 conectado");
   }
-  // ACTUALIZAR EL ESTADO DE CADA BOTÓN
-  btnOk.update();
-  btnUp.update();
-  btnDown.update();
-  btnLeft.update();
-  btnRight.update();
-  btnK1.update();
-  btnK2.update();
-  btnK3.update();
-  btnK4.update();
-  btnReset.update();
+  if (type == WStype_TEXT)
+  {
+    String message = String((char *)payload); // RECIBIR EL MENSAJE DEL CLIENTE
+    DynamicJsonDocument data(1024);           // CREAR UN DOCUMENTO JSON
+    deserializeJson(data, message);           // DESERIALIZAR EL MENSAJE
+    String action = data["action"];           // RECIBIR LA ACCIÓN
+    Serial.print("Acción K1: ");
+    Serial.println(action);
 
-  if (btnOk.fell()) // CONFIRMACIÓN DE LA INSERCION DEL TIEMPO DE RIEGO MANUAL
-  {
-    if (K1Timer == 1)
+    if (action == "SET_TIMER")
     {
-      K1Timer = 0;
-      remainingTimeK1 = selectedTimeK1;
-      Serial.print("Tiempo seleccionado en K1: ");
-      Serial.println(selectedTimeK1);
+      bool timerStatus = data["timerStatus"]; // RECIBIR EL ESTADO DEL TEMPORIZADOR
+      if (timerStatus == false)
+      {
+        remainingTimeK1 = 0;                             // ESTABLECER EL TIEMPO RESTANTE EN 0
+        config.setK1Timer(remainingTimeK1);              // GUARDAR EL TIEMPO RESTANTE
+        config.setK1TimerSelected(remainingTimeK1);      // GUARDAR EL TIEMPO SELECCIONADO
+        config.setK1TimerStatus(timerStatus);            // GUARDAR EL ESTADO DEL TEMPORIZADOR
+        sendRemainingTime(remainingTimeK1, webSocketK1); // ENVIAR EL TIEMPO RESTANTE AL CLIENTE
+        LCD_UpdateK1Timer();                             // ACTUALIZAR EL TIEMPO EN LA PANTALLA LCD
+        K1State = INACTIVE;                              // ESTABLECER EL ESTADO DEL TEMPORIZADOR EN INACTIVO
+      }
+      else if (timerStatus == true)
+      {
+        unsigned long selectedTime = data["selectedTime"]; // RECIBIR EL TIEMPO SELECCIONADO
+        config.setK1TimerSelected(selectedTime);           // RECIBIR EL TIEMPO SELECCIONADO
+        remainingTimeK1 = selectedTime;                    // RECIBIR EL TIEMPO SELECCIONADO
+        config.setK1TimerStatus(timerStatus);              // GUARDAR EL ESTADO DEL TEMPORIZADOR
+        config.setK1Timer(selectedTime);                   // GUARDAR EL TIEMPO RESTANTE
+        sendRemainingTime(remainingTimeK1, webSocketK1);   // ENVIAR EL TIEMPO RESTANTE AL CLIENTE
+        sendTimerStatus(timerStatus, webSocketK1);
+        LCD_UpdateK1Timer(); // ACTUALIZAR EL TIEMPO EN LA PANTALLA LCD
+        K1State = WAITING;
+      }
     }
-    else if (K2Timer == 1)
+    else if (action == "ON") // ENCENDER EL RELÉ
     {
-      K2Timer = 0;
-      remainingTimeK2 = selectedTimeK2;
-      Serial.print("Tiempo seleccionado en K2: ");
-      Serial.println(selectedTimeK2);
+      relayOn(K1, K1State);
+      config.setK1State("ON");
+      sendRelayStatus("ON", webSocketK1);
     }
-    else if (K3Timer == 1)
+    else if (action == "OFF") // APAGAR EL RELÉ
     {
-      K3Timer = 0;
-      remainingTimeK3 = selectedTimeK3;
-      Serial.print("Tiempo seleccionado en K3: ");
-      Serial.println(selectedTimeK3);
-    }
-    else if (K4Timer == 1)
-    {
-      K4Timer = 0;
-      remainingTimeK4 = selectedTimeK4;
-      Serial.print("Tiempo seleccionado en K4: ");
-      Serial.println(selectedTimeK4);
-    }
-  }
-
-  if (btnUp.fell()) // BOTON UP AUMENTA EL TIEMPO DE RIEGO EN 1 MINUTO
-  {
-    if (K1Timer == 1)
-    {
-      selectedTimeK1 += 60000;
-    }
-    else if (K2Timer == 1)
-    {
-      selectedTimeK2 += 60000;
-    }
-    else if (K3Timer == 1)
-    {
-      selectedTimeK3 += 60000;
-    }
-    else if (K4Timer == 1)
-    {
-      selectedTimeK4 += 60000;
-    }
-  }
-
-  if (btnDown.fell()) // BOTON DOWN DISMINUYE EL TIEMPO DE RIEGO EN 1 MINUTO
-  {
-    // Botón DOWN presionado
-    if (K1Timer == 1)
-    {
-      selectedTimeK1 -= 60000;
-      Serial.print("Tiempo seleccionado K1: ");
-      Serial.println(selectedTimeK1);
-    }
-    else if (K2Timer == 1)
-    {
-      selectedTimeK2 -= 60000;
-      Serial.print("Tiempo seleccionado K2: ");
-      Serial.println(selectedTimeK2);
-    }
-    else if (K3Timer == 1)
-    {
-      selectedTimeK3 -= 60000;
-      Serial.print("Tiempo seleccionado K3: ");
-      Serial.println(selectedTimeK3);
-    }
-    else if (K4Timer == 1)
-    {
-      selectedTimeK4 -= 60000;
-      Serial.print("Tiempo seleccionado K4: ");
-      Serial.println(selectedTimeK4);
-    }
-  }
-
-  if (btnLeft.fell()) // BOTON LEFT ESTÁ INACTIVO
-  {
-    // Botón LEFT presionado
-    Serial.println("Botón LEFT presionado");
-  }
-
-  if (btnRight.fell()) // BOTON DERECHA ESTÁ INACTIVO
-  {
-    // Botón DERECHA presionado
-    Serial.println("Botón DERECHA presionado");
-  }
-
-  if (btnReset.rose()) // BOTÓN DE RESET
-  {
-    reset();
-  }
-  else if (btnK1.read() == HIGH && btnK1.currentDuration() == 10000) // RESTABLECER LA CONFIGURACIÓN DE FÁBRICA DESPUÉS DE 10 SEGUNDOS
-  {
-    factoryReset();
-  }
-
-  if (btnK1.fell()) // BOTÓN K1
-  {
-    switch (K1State)
-    {
-    case INACTIVE:
-      setTimeRelay("K1");
-      break;
-    case WAITING:
-      relayStart(K1, K1State);
-      break;
-    case ACTIVE:
-      relayPause(K1, K1State);
-      break;
-    case PAUSED:
-      relayContinue(K1, K1State);
-      break;
-    case OFF:
+      relayStop(K1, K1State);
+      config.setK1State("INACTIVE");
       K1State = INACTIVE;
-      break;
+      sendRelayStatus("OFF", webSocketK1);
+    }
+    else if (action == "INACTIVE") // ESTABLECER EL ESTADO DEL RELÉ EN INACTIVO
+    {
+      relayStop(K1, K1State);
+      config.setK1State("INACTIVE");
+      remainingTimeK1 = config.getK1TimerSelected();
+      LCD_UpdateK1Timer();
+      sendRelayStatus("INACTIVE", webSocketK1);
+      sendRemainingTime(remainingTimeK1, webSocketK1);
+    }
+    else if (action == "ACTIVE") // ACTIVAR EL RELÉ
+    {
+      relayStart(K1, K1State);
+      config.setK1State("ACTIVE");
+      sendRelayStatus("ACTIVE", webSocketK1);
+    }
+    else if (action == "PAUSE") // PAUSAR EL RELÉ
+    {
+      relayPause(K1, K1State);
+      config.setK1State("PAUSE");
+      sendRelayStatus("PAUSE", webSocketK1);
+    }
+    else if (action == "CONTINUE") // CONTINUAR EL RELÉ DESPUÉS DE PAUSARLO
+    {
+      relayContinue(K1, K1State);
+      config.setK1State("ACTIVE");
+      sendRelayStatus("ACTIVE", webSocketK1);
     }
   }
-  else if (btnK1.read() == HIGH && btnK1.currentDuration() == 3000) // APAGAR K1 DESPUÉS DE 3 SEGUNDOS
+  // else if (type == WStype_DISCONNECTED)
+  // {
+  //   Serial.println("Cliente K3 desconectado");
+  // }
+}
+
+void webSocketEventK2(uint8_t num, WStype_t type, uint8_t *payload, size_t length) // FUNCION PARA MANEJAR LOS EVENTOS DEL WEBSOCKET DE K2
+{
+  if (type == WStype_CONNECTED)
   {
-    relayStop(K1, K1State);
+    // Serial.println("Cliente K2 conectado");
   }
 
-  if (btnK2.fell()) // BOTÓN K2
+  if (type == WStype_TEXT)
   {
-    switch (K2State)
+    String message = String((char *)payload); // RECIBIR EL MENSAJE DEL CLIENTE
+    DynamicJsonDocument data(1024);           // CREAR UN DOCUMENTO JSON
+    deserializeJson(data, message);           // DESERIALIZAR EL MENSAJE
+    String action = data["action"];           // RECIBIR LA ACCIÓN
+
+    if (action == "SET_TIMER")
     {
-    case INACTIVE:
-      setTimeRelay("K2");
-      break;
-    case WAITING:
-      relayStart(K2, K2State);
-      break;
-    case ACTIVE:
-      relayPause(K2, K2State);
-      break;
-    case PAUSED:
-      relayContinue(K2, K2State);
-      break;
-    case OFF:
-      K2State = INACTIVE;
-      break;
+      bool timerStatus = data["timerStatus"]; // RECIBIR EL ESTADO DEL TEMPORIZADOR
+      if (timerStatus == false)
+      {
+        remainingTimeK2 = 0;                             // ESTABLECER EL TIEMPO RESTANTE EN 0
+        config.setK2Timer(remainingTimeK2);              // GUARDAR EL TIEMPO RESTANTE
+        config.setK2TimerSelected(remainingTimeK2);      // GUARDAR EL TIEMPO SELECCIONADO
+        config.setK2TimerStatus(timerStatus);            // GUARDAR EL ESTADO DEL TEMPORIZADOR
+        sendRemainingTime(remainingTimeK2, webSocketK2); // ENVIAR EL TIEMPO RESTANTE AL CLIENTE
+        LCD_UpdateK2Timer();                             // ACTUALIZAR EL TIEMPO EN LA PANTALLA LCD
+        K2State = INACTIVE;                              // ESTABLECER EL ESTADO DEL TEMPORIZADOR EN INACTIVO
+      }
+      else if (timerStatus == true)
+      {
+        unsigned long selectedTime = data["selectedTime"]; // RECIBIR EL TIEMPO SELECCIONADO
+        config.setK2TimerSelected(selectedTime);           // GUARDAR EL TIEMPO SELECCIONADO
+        remainingTimeK2 = selectedTime;                    // ESTABLECER EL TIEMPO RESTANTE
+        config.setK2TimerStatus(timerStatus);              // GUARDAR EL ESTADO DEL TEMPORIZADOR
+        config.setK2Timer(selectedTime);                   // GUARDAR EL TIEMPO RESTANTE
+        sendRemainingTime(remainingTimeK2, webSocketK2);   // ENVIAR EL TIEMPO RESTANTE AL CLIENTE
+        sendTimerStatus(timerStatus, webSocketK2);         // ENVIAR EL ESTADO DEL TEMPORIZADOR AL CLIENTE
+        LCD_UpdateK2Timer();                               // ACTUALIZAR EL TIEMPO EN LA PANTALLA LCD
+        K2State = WAITING;                                 // ESTABLECER EL ESTADO DEL TEMPORIZADOR EN ESPERA
+      }
     }
-  }
-  else if (btnK2.read() == HIGH && btnK2.currentDuration() == 3000) // APAGAR K2 DESPUÉS DE 3 SEGUNDOS
-  {
-    relayStop(K2, K2State);
+    else if (action == "ON") // ENCENDER EL RELÉ
+    {
+      relayOn(K2, K2State);
+      config.setK2State("ON");
+      sendRelayStatus("ON", webSocketK2);
+    }
+    else if (action == "OFF") // APAGAR EL RELÉ
+    {
+      relayStop(K2, K2State);
+      config.setK2State("INACTIVE");
+      K2State = INACTIVE;
+      sendRelayStatus("OFF", webSocketK2);
+    }
+    else if (action == "INACTIVE") // ESTABLECER EL ESTADO DEL RELÉ EN INACTIVO
+    {
+      relayStop(K2, K2State);
+      config.setK2State("INACTIVE");
+      remainingTimeK2 = config.getK2TimerSelected();
+      LCD_UpdateK2Timer();
+      sendRelayStatus("INACTIVE", webSocketK2);
+      sendRemainingTime(remainingTimeK2, webSocketK2);
+    }
+    else if (action == "ACTIVE") // ACTIVAR EL RELÉ
+    {
+      relayStart(K2, K2State);
+      config.setK2State("ACTIVE");
+      sendRelayStatus("ACTIVE", webSocketK2);
+    }
+    else if (action == "PAUSE") // PAUSAR EL RELÉ
+    {
+      relayPause(K2, K2State);
+      config.setK2State("PAUSE");
+      sendRelayStatus("PAUSE", webSocketK2);
+    }
+    else if (action == "CONTINUE") // CONTINUAR EL RELÉ DESPUÉS DE PAUSARLO
+    {
+      relayContinue(K2, K2State);
+      config.setK2State("ACTIVE");
+      sendRelayStatus("ACTIVE", webSocketK2);
+    }
   }
 }
 
-// FUNCIONES PARA EL MANEJO DE LOS RELÉS
+void webSocketEventK3(uint8_t num, WStype_t type, uint8_t *payload, size_t length) // FUNCION PARA MANEJAR LOS EVENTOS DEL WEBSOCKET DE K3
+{
+  if (type == WStype_CONNECTED)
+  {
+    // Serial.println("Cliente K3 conectado");
+  }
+
+  if (type == WStype_TEXT)
+  {
+    String message = String((char *)payload); // RECIBIR EL MENSAJE DEL CLIENTE
+    DynamicJsonDocument data(1024);           // CREAR UN DOCUMENTO JSON
+    deserializeJson(data, message);
+    String action = data["action"];
+
+    if (action == "SET_TIMER")
+    {
+      bool timerStatus = data["timerStatus"]; // RECIBIR EL ESTADO DEL TEMPORIZADOR
+      if (timerStatus == false)
+      {
+        remainingTimeK3 = 0;                             // ESTABLECER EL TIEMPO RESTANTE EN 0
+        config.setK3Timer(remainingTimeK3);              // GUARDAR EL TIEMPO RESTANTE
+        config.setK3TimerSelected(remainingTimeK3);      // GUARDAR EL TIEMPO SELECCIONADO
+        config.setK3TimerStatus(timerStatus);            // GUARDAR EL ESTADO DEL TEMPORIZADOR
+        sendRemainingTime(remainingTimeK3, webSocketK3); // ENVIAR EL TIEMPO RESTANTE AL CLIENTE
+        LCD_UpdateK3Timer();                             // ACTUALIZAR EL TIEMPO EN LA PANTALLA LCD
+        K3State = INACTIVE;                              // ESTABLECER EL ESTADO DEL TEMPORIZADOR EN INACTIVO
+      }
+      else if (timerStatus == true)
+      {
+        unsigned long selectedTime = data["selectedTime"]; // RECIBIR EL TIEMPO SELECCIONADO
+        config.setK3TimerSelected(selectedTime);           // GUARDAR EL TIEMPO SELECCIONADO
+        remainingTimeK3 = selectedTime;                    // ESTABLECER EL TIEMPO RESTANTE
+        config.setK3TimerStatus(timerStatus);              // GUARDAR EL ESTADO DEL TEMPORIZADOR
+        config.setK3Timer(selectedTime);                   // GUARDAR EL TIEMPO RESTANTE
+        sendRemainingTime(remainingTimeK3, webSocketK3);   // ENVIAR EL TIEMPO RESTANTE AL CLIENTE
+        sendTimerStatus(timerStatus, webSocketK3);         // ENVIAR EL ESTADO DEL TEMPORIZADOR AL CLIENTE
+        LCD_UpdateK3Timer();                               // ACTUALIZAR EL TIEMPO EN LA PANTALLA LCD
+        K3State = WAITING;                                 // ESTABLECER EL ESTADO DEL TEMPORIZADOR EN ESPERA
+      }
+    }
+    else if (action == "ON") // ENCENDER EL RELÉ
+    {
+      relayOn(K3, K3State);
+      config.setK3State("ON");
+      sendRelayStatus("ON", webSocketK3);
+    }
+    else if (action == "OFF") // APAGAR EL RELÉ
+    {
+      relayStop(K3, K3State);
+      config.setK3State("INACTIVE");
+      K3State = INACTIVE;
+      sendRelayStatus("OFF", webSocketK3);
+    }
+    else if (action == "INACTIVE") // ESTABLECER EL ESTADO DEL RELÉ EN INACTIVO
+    {
+      relayStop(K3, K3State);
+      config.setK3State("INACTIVE");
+      remainingTimeK3 = config.getK3TimerSelected();
+      LCD_UpdateK3Timer();
+      sendRelayStatus("INACTIVE", webSocketK3);
+      sendRemainingTime(remainingTimeK3, webSocketK3);
+    }
+    else if (action == "ACTIVE") // ACTIVAR EL RELÉ
+    {
+      relayStart(K3, K3State);
+      config.setK3State("ACTIVE");
+      sendRelayStatus("ACTIVE", webSocketK3);
+    }
+    else if (action == "PAUSE") // PAUSAR EL RELÉ
+    {
+      relayPause(K3, K3State);
+      config.setK3State("PAUSE");
+      sendRelayStatus("PAUSE", webSocketK3);
+    }
+    else if (action == "CONTINUE") // CONTINUAR EL RELÉ DESPUÉS DE PAUSARLO
+    {
+      relayContinue(K3, K3State);
+      config.setK3State("ACTIVE");
+      sendRelayStatus("ACTIVE", webSocketK3);
+    }
+  }
+}
+
+void webSocketEventK4(uint8_t num, WStype_t type, uint8_t *payload, size_t length) // FUNCION PARA MANEJAR LOS EVENTOS DEL WEBSOCKET DE K4
+{
+  if (type == WStype_CONNECTED)
+  {
+    // Serial.println("Cliente K4 conectado");
+  }
+
+  if (type == WStype_TEXT)
+  {
+    String message = String((char *)payload); // RECIBIR EL MENSAJE DEL CLIENTE
+    DynamicJsonDocument data(1024);           // CREAR UN DOCUMENTO JSON
+    deserializeJson(data, message);
+    String action = data["action"];
+
+    if (action == "SET_TIMER")
+    {
+      bool timerStatus = data["timerStatus"]; // RECIBIR EL ESTADO DEL TEMPORIZADOR
+      if (timerStatus == false)
+      {
+        remainingTimeK4 = 0;                             // ESTABLECER EL TIEMPO RESTANTE EN 0
+        config.setK4Timer(remainingTimeK4);              // GUARDAR EL TIEMPO RESTANTE
+        config.setK4TimerSelected(remainingTimeK4);      // GUARDAR EL TIEMPO SELECCIONADO
+        config.setK4TimerStatus(timerStatus);            // GUARDAR EL ESTADO DEL TEMPORIZADOR
+        sendRemainingTime(remainingTimeK4, webSocketK4); // ENVIAR EL TIEMPO RESTANTE AL CLIENTE
+        LCD_UpdateK4Timer();                             // ACTUALIZAR EL TIEMPO EN LA PANTALLA LCD
+        K4State = INACTIVE;                              // ESTABLECER EL ESTADO DEL TEMPORIZADOR EN INACTIVO
+      }
+      else if (timerStatus == true)
+      {
+        unsigned long selectedTime = data["selectedTime"]; // RECIBIR EL TIEMPO SELECCIONADO
+        config.setK4TimerSelected(selectedTime);           // GUARDAR EL TIEMPO SELECCIONADO
+        remainingTimeK4 = selectedTime;                    // ESTABLECER EL TIEMPO RESTANTE
+        config.setK4TimerStatus(timerStatus);              // GUARDAR EL ESTADO DEL TEMPORIZADOR
+        config.setK4Timer(selectedTime);                   // GUARDAR EL TIEMPO RESTANTE
+        sendRemainingTime(remainingTimeK4, webSocketK4);   // ENVIAR EL TIEMPO RESTANTE AL CLIENTE
+        sendTimerStatus(timerStatus, webSocketK4);         // ENVIAR EL ESTADO DEL TEMPORIZADOR AL CLIENTE
+        LCD_UpdateK4Timer();                               // ACTUALIZAR EL TIEMPO EN LA PANTALLA LCD
+        K4State = WAITING;                                 // ESTABLECER EL ESTADO DEL TEMPORIZADOR EN ESPERA
+      }
+    }
+    else if (action == "ON") // ENCENDER EL RELÉ
+    {
+      relayOn(K4, K4State);
+      config.setK4State("ON");
+      sendRelayStatus("ON", webSocketK4);
+    }
+    else if (action == "OFF") // APAGAR EL RELÉ
+    {
+      relayStop(K4, K4State);
+      config.setK4State("INACTIVE");
+      K4State = INACTIVE;
+      sendRelayStatus("OFF", webSocketK4);
+    }
+    else if (action == "INACTIVE") // ESTABLECER EL ESTADO DEL RELÉ EN INACTIVO
+    {
+      relayStop(K4, K4State);
+      config.setK4State("INACTIVE");
+      remainingTimeK4 = config.getK4TimerSelected();
+      LCD_UpdateK4Timer();
+      sendRemainingTime(remainingTimeK4, webSocketK4);
+      sendRelayStatus("INACTIVE", webSocketK4);
+    }
+    else if (action == "ACTIVE") // ACTIVAR EL RELÉ
+    {
+      relayStart(K4, K4State);
+      config.setK4State("ACTIVE");
+      sendRelayStatus("ACTIVE", webSocketK4);
+    }
+    else if (action == "PAUSE") // PAUSAR EL RELÉ
+    {
+      relayPause(K4, K4State);
+      config.setK4State("PAUSE");
+      sendRelayStatus("PAUSE", webSocketK4);
+    }
+    else if (action == "CONTINUE") // CONTINUAR EL RELÉ DESPUÉS DE PAUSARLO
+    {
+      relayContinue(K4, K4State);
+      config.setK4State("ACTIVE");
+      sendRelayStatus("ACTIVE", webSocketK4);
+    }
+  }
+}
+
+//***** FUNCIONES PARA EL MANEJO DE LOS RELÉS
 void setTimeRelay(String relay) // ESTABLECER EL TIEMPO DE RIEGO
 {
   if (relay == "K1")
@@ -552,7 +819,22 @@ void setTimeRelay(String relay) // ESTABLECER EL TIEMPO DE RIEGO
     K4State = WAITING;
   }
 }
+void relayOn(int relay, RelayState &state) // ENCENDER EL RELÉ
+{
+  digitalWrite(relay, HIGH);
+  state = ON;
+}
 void relayStart(int relay, RelayState &state) // ACTIVAR EL RELÉ
+{
+  digitalWrite(relay, HIGH);
+  state = ACTIVE;
+}
+void relayPause(int relay, RelayState &state) // PAUSAR EL RELÉ
+{
+  digitalWrite(relay, LOW);
+  state = PAUSE;
+}
+void relayContinue(int relay, RelayState &state) // CONTINUAR EL RELÉ DESPUÉS DE PAUSARLO
 {
   digitalWrite(relay, HIGH);
   state = ACTIVE;
@@ -560,20 +842,544 @@ void relayStart(int relay, RelayState &state) // ACTIVAR EL RELÉ
 void relayStop(int relay, RelayState &state) // APAGAR EL RELÉ
 {
   digitalWrite(relay, LOW);
-  state = OFF;
+  state = INACTIVE;
 }
-void relayPause(int relay, RelayState &state) // PAUSAR EL RELÉ
+void relayInactive(int relay, RelayState &state) // APAGAR EL RELÉ
 {
   digitalWrite(relay, LOW);
-  state = PAUSED;
+  state = OFF;
 }
-void relayContinue(int relay, RelayState &state) // CONTINUAR EL RELÉ DESPUÉS DE PAUSARLO
+void setManualTimer() // MOSTRAR PARPADEO
 {
-  digitalWrite(relay, HIGH);
-  state = ACTIVE;
+  if (K1Timer == 1) // MOSTRAR PARPADEO AL SELECCIONAR EL TIEMPO EN K1
+  {
+    if (stateK1Timer == false)
+    {
+      displayLCD.cleanK1Timer();
+      stateK1Timer = true;
+    }
+    else
+    {
+      displayLCD.K1Timer(remainingTimeK1);
+      stateK1Timer = false;
+    }
+  }
+  else if (K2Timer == 1) // MOSTRAR PARPADEO AL SELECCIONAR EL TIEMPO EN K2
+  {
+    if (stateK2Timer == false)
+    {
+      displayLCD.cleanK2Timer();
+      stateK2Timer = true;
+    }
+    else
+    {
+      displayLCD.K2Timer(remainingTimeK2);
+      stateK2Timer = false;
+    }
+  }
+  else if (K3Timer == 1) // MOSTRAR PARPADEO AL SELECCIONAR EL TIEMPO EN K3
+  {
+    if (stateK3Timer == false)
+    {
+      displayLCD.cleanK3Timer();
+      stateK3Timer = true;
+    }
+    else
+    {
+      displayLCD.K3Timer(remainingTimeK3);
+      stateK3Timer = false;
+    }
+  }
+  else if (K4Timer == 1) // MOSTRAR PARPADEO AL SELECCIONAR EL TIEMPO EN K4
+  {
+    if (stateK4Timer == false)
+    {
+      displayLCD.cleanK4Timer();
+      stateK4Timer = true;
+    }
+    else
+    {
+      displayLCD.K4Timer(remainingTimeK4);
+      stateK4Timer = false;
+    }
+  }
 }
 
-// FUNCIONES D LOOP
+void finallyK1Timer() // FINALIZAR EL TEMPORIZADOR DE K1
+{
+    relayInactive(K1, K1State);
+    remainingTimeK1 = config.getK1TimerSelected();
+    config.setK1Timer(remainingTimeK1);
+    sendRemainingTime(remainingTimeK1, webSocketK1);
+    sendRelayStatus("INACTIVE", webSocketK1);
+    LCD_UpdateK1Timer();
+}
+
+void finallyK2Timer() // FINALIZAR EL TEMPORIZADOR DE K2
+{
+    relayInactive(K2, K2State);
+    remainingTimeK2 = config.getK2TimerSelected();
+    config.setK2Timer(remainingTimeK2);
+    sendRemainingTime(remainingTimeK2, webSocketK2);
+    sendRelayStatus("INACTIVE", webSocketK2);
+    LCD_UpdateK2Timer();
+}
+
+void finallyK3Timer() // FINALIZAR EL TEMPORIZADOR DE K3
+{
+    relayInactive(K3, K3State);
+    remainingTimeK3 = config.getK3TimerSelected();
+    config.setK3Timer(remainingTimeK3);
+    sendRemainingTime(remainingTimeK3, webSocketK3);
+    sendRelayStatus("INACTIVE", webSocketK3);
+    LCD_UpdateK3Timer();
+}
+
+void finallyK4Timer() // FINALIZAR EL TEMPORIZADOR DE K4
+{
+    relayInactive(K4, K4State);
+    remainingTimeK4 = config.getK4TimerSelected();
+    config.setK4Timer(remainingTimeK4);
+    sendRemainingTime(remainingTimeK4, webSocketK4);
+    sendRelayStatus("INACTIVE", webSocketK4);
+    LCD_UpdateK4Timer();
+}
+
+
+//***** FUNCIONES DE LOOP
+void loop()
+{
+  webSocketConfig.loop();
+  webSocketData.loop();
+  webSocketK1.loop();
+  webSocketK2.loop();
+  webSocketK3.loop();
+  webSocketK4.loop();
+
+  // RETARDO DE 1 SEGUNDO
+  unsigned long tiempoActual = millis();
+  static unsigned long ultimoTiempo = 0;
+  if (tiempoActual - ultimoTiempo >= INTERVALODELECTURA1SEG)
+  {
+    ultimoTiempo = tiempoActual; // ACTUALIZAR EL TIEMPO DE LA ÚLTIMA LECTURA
+    getTime();                   // ACTUALIZAR LA HORA
+
+    getTemperature(); // ACTUALIZAR LA TEMPERATURA
+
+    if (K1State == ACTIVE) // ACTUALIZAR EL TIEMPO RESTANTE EN K1
+    {
+      remainingTimeK1 -= 1000;
+      config.setK1Timer(remainingTimeK1);
+      LCD_UpdateK1Timer();
+      sendRemainingTime(remainingTimeK1, webSocketK1);
+      if (remainingTimeK1 == 0)
+      {
+        finallyK1Timer();
+      }
+    }
+    if (K2State == ACTIVE) // ACTUALIZAR EL TIEMPO RESTANTE EN K2
+    {
+      remainingTimeK2 -= 1000;
+      config.setK2Timer(remainingTimeK2);
+      LCD_UpdateK2Timer();
+      sendRemainingTime(remainingTimeK2, webSocketK2);
+      if (remainingTimeK2 == 0)
+      {
+        finallyK2Timer();
+      }
+    }
+    if (K3State == ACTIVE) // ACTUALIZAR EL TIEMPO RESTANTE EN K3
+    {
+      remainingTimeK3 -= 1000;
+      config.setK3Timer(remainingTimeK3);
+      LCD_UpdateK3Timer();
+      sendRemainingTime(remainingTimeK3, webSocketK3);
+      if (remainingTimeK3 == 0)
+      {
+        finallyK3Timer();
+      }
+    }
+    if (K4State == ACTIVE) // ACTUALIZAR EL TIEMPO RESTANTE EN K4
+    {
+      remainingTimeK4 -= 1000;
+      config.setK4Timer(remainingTimeK4);
+      LCD_UpdateK4Timer();
+      sendRemainingTime(remainingTimeK4, webSocketK4);
+      if (remainingTimeK4 == 0)
+      {
+        finallyK4Timer();
+      }
+    }
+  }
+  // RETARDO DE 0,5 SEGUNDOS
+  static unsigned long ultimoTiempo2 = 0;
+  if (tiempoActual - ultimoTiempo2 >= INTERVALODELECTURA05SEG)
+  {
+    ultimoTiempo2 = tiempoActual; 
+                                  //*** ***//
+    setManualTimer();
+  }
+
+  // RETARDO DE 10 SEGUNDOS
+  static unsigned long ultimoTiempo3 = 0;
+  if (tiempoActual - ultimoTiempo3 >= INTERVALODELECTURA10SEG)
+  {
+    ultimoTiempo3 = tiempoActual; 
+    sendData();                   // ENVIAR DATOS
+  }
+
+  // ACTUALIZAR EL ESTADO DE CADA BOTÓN
+  btnOk.update();
+  btnUp.update();
+  btnDown.update();
+  btnLeft.update();
+  btnRight.update();
+  btnK1.update();
+  btnK2.update();
+  btnK3.update();
+  btnK4.update();
+  btnReset.update();
+
+  if (btnOk.read() == HIGH && btnOk.currentDuration() == 2000) // CONFIRMACIÓN DE LA INSERCION DEL TIEMPO DE RIEGO MANUAL
+  {
+
+    if (K1Timer == 1)
+    {
+      if (remainingTimeK1 >= 60000)
+      {
+        config.setK1TimerStatus(true);
+        config.setK1TimerSelected(remainingTimeK1);
+        config.setK1Timer(remainingTimeK1);
+        sendTimerStatus(true, webSocketK1);
+        sendRemainingTime(remainingTimeK1, webSocketK1);
+      }
+      else
+      {
+        config.setK1TimerStatus(false);
+        remainingTimeK1 = 0;
+        sendTimerStatus(false, webSocketK1);
+        sendRemainingTime(remainingTimeK1, webSocketK1);
+        config.setK1Timer(remainingTimeK1);
+        config.setK1TimerSelected(remainingTimeK1);
+      }
+      LCD_UpdateK1Timer();
+      K1Timer = 0;
+    }
+    else if (K2Timer == 1)
+    {
+      if (remainingTimeK2 >= 60000)
+      {
+        config.setK2TimerStatus(true);
+        config.setK2TimerSelected(remainingTimeK2);
+        config.setK2Timer(remainingTimeK2);
+        sendTimerStatus(true, webSocketK2);
+        sendRemainingTime(remainingTimeK2, webSocketK2);
+      }
+      else
+      {
+        config.setK2TimerStatus(false);
+        remainingTimeK2 = 0;
+        sendTimerStatus(false, webSocketK2);
+        sendRemainingTime(remainingTimeK2, webSocketK2);
+        config.setK2Timer(remainingTimeK2);
+        config.setK2TimerSelected(remainingTimeK2);
+      }
+      LCD_UpdateK2Timer();
+      K2Timer = 0;
+    }
+    else if (K3Timer == 1)
+    {
+      if (remainingTimeK3 >= 60000)
+      {
+        config.setK3TimerStatus(true);
+        config.setK3TimerSelected(remainingTimeK3);
+        config.setK3Timer(remainingTimeK3);
+        sendTimerStatus(true, webSocketK3);
+        sendRemainingTime(remainingTimeK3, webSocketK3);
+      }
+      else
+      {
+        config.setK3TimerStatus(false);
+        remainingTimeK3 = 0;
+        sendTimerStatus(false, webSocketK3);
+        sendRemainingTime(remainingTimeK3, webSocketK3);
+        config.setK3Timer(remainingTimeK3);
+        config.setK3TimerSelected(remainingTimeK3);
+      }
+      LCD_UpdateK3Timer();
+      K3Timer = 0;
+    }
+    else if (K4Timer == 1)
+    {
+      if (remainingTimeK4 >= 60000)
+      {
+        config.setK4TimerStatus(true);
+        config.setK4TimerSelected(remainingTimeK4);
+        config.setK4Timer(remainingTimeK4);
+        sendTimerStatus(true, webSocketK4);
+        sendRemainingTime(remainingTimeK4, webSocketK4);
+      }
+      else
+      {
+        config.setK4TimerStatus(false);
+        remainingTimeK4 = 0;
+        sendRemainingTime(remainingTimeK4, webSocketK4);
+        config.setK4Timer(remainingTimeK4);
+        sendTimerStatus(false, webSocketK4);
+        config.setK4TimerSelected(remainingTimeK4);
+      }
+      LCD_UpdateK4Timer();
+      K4Timer = 0;
+    }
+  }
+
+  if (btnUp.fell()) // BOTON UP AUMENTA EL TIEMPO DE RIEGO EN 1 MINUTO
+  {
+    if (K1Timer == 1)
+    {
+      remainingTimeK1 += 60000;
+    }
+    else if (K2Timer == 1)
+    {
+      remainingTimeK2 += 60000;
+    }
+    else if (K3Timer == 1)
+    {
+      remainingTimeK3 += 60000;
+    }
+    else if (K4Timer == 1)
+    {
+      remainingTimeK4 += 60000;
+    }
+  }
+
+  if (btnDown.fell()) // BOTON DOWN DISMINUYE EL TIEMPO DE RIEGO EN 1 MINUTO
+  {
+    // Botón DOWN presionado
+    if (K1Timer == 1)
+    {
+      remainingTimeK1 -= 60000;
+    }
+    else if (K2Timer == 1)
+    {
+      remainingTimeK2 -= 60000;
+    }
+    else if (K3Timer == 1)
+    {
+      remainingTimeK3 -= 60000;
+    }
+    else if (K4Timer == 1)
+    {
+      remainingTimeK4 -= 60000;
+    }
+  }
+
+  if (btnLeft.fell()) // BOTON LEFT ESTÁ INACTIVO
+  {
+    if (menuPage > 1)
+    {
+      menuPage -= 1;
+      setMenuPage();
+    }
+  }
+
+  if (btnRight.fell()) // BOTON DERECHA ESTÁ INACTIVO
+  {
+    if (menuPage < 4)
+    {
+      menuPage += 1;
+      setMenuPage();
+    }
+  }
+
+  if (btnReset.rose()) // BOTÓN DE RESET
+  {
+    reset();
+  }
+  else if (btnK1.read() == HIGH && btnK1.currentDuration() == 10000) // RESTABLECER LA CONFIGURACIÓN DE FÁBRICA DESPUÉS DE 10 SEGUNDOS
+  {
+    factoryReset();
+  }
+
+  if (btnK1.fell()) // BOTÓN K1
+  {
+
+    bool K1Active = config.getK1Active();
+
+    if (K1Active) // Si el relé K1 está inactivo
+    {
+      switch (K1State)
+      {
+      case INACTIVE:
+        setTimeRelay("K1");
+        break;
+      case WAITING:
+        if (K1Timer == 0)
+        {
+          relayStart(K1, K1State);
+          sendRelayStatus("ACTIVE", webSocketK1);
+        }
+        else
+        {
+          Serial.println("El tiempo de riego no está confirmado");
+        }
+        break;
+      case ACTIVE:
+        relayPause(K1, K1State);
+        sendRelayStatus("PAUSE", webSocketK1);
+        break;
+      case PAUSE:
+        relayContinue(K1, K1State);
+        sendRelayStatus("ACTIVE", webSocketK1);
+        break;
+      case OFF:
+        K1State = INACTIVE;
+        sendRelayStatus("INACTIVE", webSocketK1);
+        break;
+      }
+    }
+  }
+  else if (btnK1.read() == HIGH && btnK1.currentDuration() == 3000) // APAGAR K1 DESPUÉS DE 3 SEGUNDOS
+  {
+    remainingTimeK1 = config.getK1TimerSelected();
+    relayInactive(K1, K1State);
+    LCD_UpdateK1Timer();
+    sendRelayStatus("INACTIVE", webSocketK1);
+    sendRemainingTime(remainingTimeK1, webSocketK1);
+  }
+
+  if (btnK2.fell()) // BOTÓN K2
+  {
+    bool K2Active = config.getK2Active();
+    if (K2Active) // Si el relé K2 está activo
+    {
+      switch (K2State)
+      {
+      case INACTIVE:
+        setTimeRelay("K2");
+        break;
+      case WAITING:
+        if (K2Timer == 0)
+        {
+          relayStart(K2, K2State);
+          sendRelayStatus("ACTIVE", webSocketK2);
+        }
+        else
+        {
+          Serial.println("El tiempo de riego no está confirmado");
+        }
+        break;
+      case ACTIVE:
+        relayPause(K2, K2State);
+        sendRelayStatus("PAUSE", webSocketK2);
+        break;
+      case PAUSE:
+        relayContinue(K2, K2State);
+        sendRelayStatus("ACTIVE", webSocketK2);
+        break;
+      case OFF:
+        K2State = INACTIVE;
+        sendRelayStatus("INACTIVE", webSocketK2);
+        break;
+      }
+    }
+  }
+  else if (btnK2.read() == HIGH && btnK2.currentDuration() == 3000) // APAGAR K2 DESPUÉS DE 3 SEGUNDOS
+  {
+    remainingTimeK2 = config.getK2TimerSelected();
+    relayInactive(K2, K2State);
+    LCD_UpdateK2Timer();
+    sendRelayStatus("INACTIVE", webSocketK2);
+    sendRemainingTime(remainingTimeK2, webSocketK2);
+  }
+}
+
+//***** FUNCIONES DEL SISTEMA
+void reset() // REINICIAR EL DISPOSITIVO
+{
+  Serial.println("Reiniciando...");
+
+  ESP.restart();
+}
+
+void factoryReset() // RESTABLECER LA CONFIGURACIÓN DE FÁBRICA
+{
+  Serial.println("Restableciendo la configuración de fábrica...");
+  // config.factoryReset();
+  // reset();
+}
+
+//***** FUNCIONES DE LA PANTALLA LCD
+void setMenuPage() // ESTABLECER LA PÁGINA DEL MENÚ EN LA PANTALLA
+{
+
+  if (menuPage == 1)
+  {
+    displayLCD.clearLine(1);
+    displayLCD.clearLine(2);
+    displayLCD.clearLine(3);
+    displayLCD.relaySeparation();
+    String K1Name = config.getK1Name();
+    String K2Name = config.getK2Name();
+    displayLCD.K1Name(K1Name);
+    displayLCD.K2Name(K2Name);
+    displayLCD.K1Timer(remainingTimeK1);
+    displayLCD.K2Timer(remainingTimeK2);
+  }
+  else if (menuPage == 2)
+  {
+    displayLCD.clearLine(1);
+    displayLCD.clearLine(2);
+    displayLCD.clearLine(3);
+    displayLCD.relaySeparation();
+    String K3Name = config.getK3Name();
+    String K4Name = config.getK4Name();
+    displayLCD.K3Name(K3Name);
+    displayLCD.K4Name(K4Name);
+    displayLCD.K3Timer(remainingTimeK3);
+    displayLCD.K4Timer(remainingTimeK4);
+  }
+  else if (menuPage == 3)
+  {
+    displayLCD.clearLine(1);
+    displayLCD.clearLine(2);
+    displayLCD.clearLine(3);
+    displayLCD.menu();
+  }
+}
+
+void LCD_UpdateK1Timer() // ACTUALIZAR EL TEMPORIZADOR EN LA PANTALLA
+{
+  if (menuPage == 1)
+  {
+    displayLCD.K1Timer(remainingTimeK1);
+  }
+}
+void LCD_UpdateK2Timer() // ACTUALIZAR EL TEMPORIZADOR EN LA PANTALLA
+{
+  if (menuPage == 1)
+  {
+    displayLCD.K2Timer(remainingTimeK2);
+  }
+}
+void LCD_UpdateK3Timer() // ACTUALIZAR EL TEMPORIZADOR EN LA PANTALLA
+{
+  if (menuPage == 2)
+  {
+    displayLCD.K3Timer(remainingTimeK3);
+  }
+   
+}
+void LCD_UpdateK4Timer() // ACTUALIZAR EL TEMPORIZADOR EN LA PANTALLA
+{
+  if (menuPage == 2)
+  {
+    displayLCD.K4Timer(remainingTimeK4);
+  }
+}
+
+//***** FUNCIONES DE OBTENCIÓN DE DATOS
+
 void getTime() // ACTUALIZAR LA HORA Y LA TEMPERATURA EN LA PANTALLA
 {
   time_t now = time(nullptr);
@@ -589,17 +1395,4 @@ void getTemperature() // OBTENER LA TEMPERATURA DEL SENSOR BMP280
 {
   float temperature = bmp.readTemperature();
   displayLCD.printTemp(temperature);
-}
-// FUNCIONES DEL SISTEMA
-void reset() // REINICIAR EL DISPOSITIVO
-{
-  Serial.println("Reiniciando...");
-  ESP.restart();
-}
-
-void factoryReset() // RESTABLECER LA CONFIGURACIÓN DE FÁBRICA
-{
-  Serial.println("Restableciendo la configuración de fábrica...");
-  // config.factoryReset();
-  // reset();
 }
