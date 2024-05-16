@@ -20,27 +20,29 @@ const Panel = ({ Relay }) => {
             ...prevState,
             K1: {
                 ...prevState.K1,
-                remainingTime: Relay.K1.timerSelected,
+                remainingTime: Relay.K1.active ? Relay.K1.remainingTime :  Relay.K1.timerSelected,
             },
             K2: {
                 ...prevState.K2,
-                remainingTime: Relay.K2.timerSelected,
+                remainingTime: Relay.K2.active ? Relay.K2.remainingTime :  Relay.K2.timerSelected,
             },
             K3: {
                 ...prevState.K3,
-                remainingTime: Relay.K3.timerSelected,
+                remainingTime: Relay.K3.active ? Relay.K3.remainingTime :  Relay.K3.timerSelected,
+
             },
             K4: {
                 ...prevState.K4,
-                remainingTime: Relay.K4.timerSelected,
+                remainingTime: Relay.K4.active ? Relay.K4.remainingTime :  Relay.K4.timerSelected,
             },
         }));
     }, []);
+    
 
     useEffect(() => {
         // const ws = new WebSocket('ws://192.168.1.222:83');
-        const ws = new WebSocket('ws://bubela.duckdns.org:83');
-        // const ws = new WebSocket('ws://' + window.location.hostname + ':83');
+        // const ws = new WebSocket('ws://bubela.duckdns.org:83');
+        const ws = new WebSocket('ws://' + window.location.hostname + ':83');
 
         setWebSocket(ws);
 

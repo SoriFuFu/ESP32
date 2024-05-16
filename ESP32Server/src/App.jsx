@@ -18,8 +18,8 @@ const App = () => {
 
     const handleGetConfig = () => {
         // const ws = new WebSocket('ws://192.168.1.222:82');
-        const ws = new WebSocket('ws://bubela.duckdns.org:82');
-        // const ws = new WebSocket('ws://' + window.location.hostname + ':82');
+        // const ws = new WebSocket('ws://bubela.duckdns.org:82');
+        const ws = new WebSocket('ws://' + window.location.hostname + ':82');
 
         ws.onopen = () => {
             let message = { action: 'getConfig' };

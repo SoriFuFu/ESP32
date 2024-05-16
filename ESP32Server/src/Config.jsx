@@ -20,8 +20,8 @@ const Config = ({ wifiConfig, apConfig, relay, setWifiStatusApp, SetApStatusApp,
 
     const handleGetConfig = () => {
         // const ws = new WebSocket('ws://192.168.1.222:81');
-        const ws = new WebSocket('ws://bubela.duckdns.org:81');
-        // const ws = new WebSocket('ws://' + window.location.hostname + ':81');
+        // const ws = new WebSocket('ws://bubela.duckdns.org:81');
+        const ws = new WebSocket('ws://' + window.location.hostname + ':81');
         setWebSocket(ws);
         
         ws.onerror = (error) => {
