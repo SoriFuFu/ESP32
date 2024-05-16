@@ -102,11 +102,23 @@ public:
     lcd.clear();
   }
 
+  void offDisplay() // APAGA LA PANTALLA
+  {
+    lcd.noBacklight();
+  }
+
+  void onDisplay() // ENCIENDE LA PANTALLA
+  {
+   lcd.init();      // INICIALIZA LA PANTALLA LCD
+  lcd.backlight(); // ENCIENDE LA RETROILUMINACIÓN DE LA PANTALLA
+  }
+
   void clearLine(int line) // LIMPIA UNA LÍNEA DE LA PANTALLA
   {
     lcd.setCursor(0, line);
     lcd.print("                    ");
   }
+
   void printWifi() // MUESTRA EL ICONO DE WIFI
   {
     lcd.createChar(1, wifiSymbol);

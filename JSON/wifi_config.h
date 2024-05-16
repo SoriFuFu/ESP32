@@ -31,6 +31,7 @@ public:
                 delay(5000);
                 WiFi.begin(ssid, password);
                 attempts = 0; // Reiniciar el contador de intentos
+                break;
             }
         }
         WiFi.config(ip, gateway, subnet);

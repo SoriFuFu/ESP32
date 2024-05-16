@@ -129,172 +129,39 @@ public:
     return configDoc["AP"]["password"].as<String>();
   }
 
-  //MÉTODO DE K1
-  bool getK1Active() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K1
+  // MÉTODO DE K1
+  bool getRelayActive(String relay) // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K1
   {
-    return configDoc["Relay"]["K1"]["active"];
+    return configDoc["Relay"][relay]["active"];
   }
 
-  String getK1Mode() // MÉTODO PARA OBTENER EL MODO DEL RELÉ K1
+  bool getRelayTimerState(String relay) // MÉTODO PARA OBTENER EL ESTADO DEL TEMPORIZADOR DEL RELÉ K1
   {
-    return configDoc["Relay"]["K1"]["mode"].as<String>();
-  }
-  
-  String getK1Name() // MÉTODO PARA OBTENER EL NOMBRE DEL RELÉ K1
-  {
-    return configDoc["Relay"]["K1"]["name"].as<String>();
+    return configDoc["Relay"][relay]["timerState"];
   }
 
-  bool getK1State() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K1
+  String getRelayName(String relay) // MÉTODO PARA OBTENER EL NOMBRE DEL RELÉ K1
   {
-    return configDoc["Relay"]["K1"]["state"];
-  }
-  
-  unsigned long getK1ActivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE ACTIVACIÓN DEL RELÉ K1
-  {
-    return configDoc["Relay"]["K1"]["activationTime"];
-  }
-  
-  unsigned long getK1TimerSelected() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K1
-  {
-    return configDoc["Relay"]["K1"]["timerSelected"];
-  }
-  
-  unsigned long getK1Timer() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K1
-  {
-    return configDoc["Relay"]["K1"]["timer"];
-  }
-  
-  unsigned long getK1DeactivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K1
-  {
-    return configDoc["Relay"]["K1"]["deactivationTime"];
+    return configDoc["Relay"][relay]["name"].as<String>();
   }
 
-  //MÉTODO DE K2
-  bool getK2Active() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K2
+  unsigned long getRelayRemainingTime(String relay) // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K1
   {
-    return configDoc["Relay"]["K2"]["active"];
+    return configDoc["Relay"][relay]["remainingTime"];
   }
 
-  String getK2Mode() // MÉTODO PARA OBTENER EL MODO DEL RELÉ K2
+  bool getRelayState(String relay) // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K1
   {
-    return configDoc["Relay"]["K2"]["mode"].as<String>();
+    return configDoc["Relay"][relay]["state"];
   }
 
-  String getK2Name() // MÉTODO PARA OBTENER EL NOMBRE DEL RELÉ K2
+  unsigned long getRelayTimerSelected(String relay) // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K1
   {
-    return configDoc["Relay"]["K2"]["name"].as<String>();
-  }
-
-  bool getK2State() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K2
-  {
-    return configDoc["Relay"]["K2"]["state"];
-  }
-  
-  unsigned long getK2TimerSelected() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K2
-  {
-    return configDoc["Relay"]["K2"]["timerSelected"];
-  }
-  
-  unsigned long getK2Timer() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K2
-  {
-    return configDoc["Relay"]["K2"]["timer"];
-  }
-
-  unsigned long getK2ActivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE ACTIVACIÓN DEL RELÉ K2
-  {
-    return configDoc["Relay"]["K2"]["activationTime"];
-  }
-
-  unsigned long getK2DeactivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K2
-  {
-    return configDoc["Relay"]["K2"]["deactivationTime"];
-  }
-
-  //MÉTODO DE K3
-  bool getK3Active() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K3
-  {
-    return configDoc["Relay"]["K3"]["active"];
-  }
-
-  String getK3Mode() // MÉTODO PARA OBTENER EL MODO DEL RELÉ K3
-  {
-    return configDoc["Relay"]["K3"]["mode"].as<String>();
-  }
-
-  String getK3Name() // MÉTODO PARA OBTENER EL NOMBRE DEL RELÉ K3
-  {
-    return configDoc["Relay"]["K3"]["name"].as<String>();
-  }
-
-  bool getK3State() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K3
-  {
-    return configDoc["Relay"]["K3"]["state"];
-  }
-
-  unsigned long getK3TimerSelected() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K3
-  {
-    return configDoc["Relay"]["K3"]["timerSelected"];
-  }
-  
-  unsigned long getK3Timer() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K3
-  {
-    return configDoc["Relay"]["K3"]["timer"];
-  }
-
-  unsigned long getK3ActivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE ACTIVACIÓN DEL RELÉ K3
-  {
-    return configDoc["Relay"]["K3"]["activationTime"];
-  }
-
-  unsigned long getK3DeactivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K3
-  {
-    return configDoc["Relay"]["K3"]["deactivationTime"];
+    return configDoc["Relay"][relay]["timerSelected"];
   }
 
 
-  //MÉTODO DE K4
-  bool getK4Active() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K4
-  {
-    return configDoc["Relay"]["K4"]["active"];
-  }
 
-  String getK4Mode() // MÉTODO PARA OBTENER EL MODO DEL RELÉ K4
-  {
-    return configDoc["Relay"]["K4"]["mode"].as<String>();
-  }
-
-  String getK4Name() // MÉTODO PARA OBTENER EL NOMBRE DEL RELÉ K4
-  {
-    return configDoc["Relay"]["K4"]["name"].as<String>();
-  }
-
-  bool getK4State() // MÉTODO PARA OBTENER EL ESTADO DEL RELÉ K4
-  {
-    return configDoc["Relay"]["K4"]["state"];
-  }
-
-  unsigned long getK4TimerSelected() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K4
-  {
-    return configDoc["Relay"]["K4"]["timerSelected"];
-  }
-  
-  unsigned long getK4Timer() // MÉTODO PARA OBTENER EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K4
-  {
-    return configDoc["Relay"]["K4"]["timer"];
-  }
-
-  unsigned long getK4ActivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE ACTIVACIÓN DEL RELÉ K4
-  {
-    return configDoc["Relay"]["K4"]["activationTime"];
-  }
-
-  unsigned long getK4DeactivationTime() // MÉTODO PARA OBTENER EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K4
-  {
-    return configDoc["Relay"]["K4"]["deactivationTime"];
-  }
-
-  
   //*****SETTERS *****//
   void setApSSID(String ssid) // MÉTODO PARA CAMBIAR EL NOMBRE DEL PUNTO DE ACCESO
   {
@@ -384,258 +251,61 @@ public:
     configDoc["AP"]["password"] = password;
     saveConfig();
   }
-  
+
   void setMacAddress(String macAddress) // MÉTODO PARA CAMBIAR LA DIRECCIÓN MAC DEL DISPOSITIVO
   {
     configDoc["Wifi"]["macAddress"] = macAddress;
     saveConfig();
   }
 
-  //MÉTODOS DE K1
-  void setK1Active(bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K1
-  {
-    if (active)
-    {
-      configDoc["Relay"]["K1"]["active"] = true;
-      saveConfig();
-      Serial.println("Relé K1 activado");
-    }
-    else
-    {
-      configDoc["Relay"]["K1"]["active"] = false;
-      saveConfig();
-      Serial.println("Relé K1 desactivado");
-    }
-  }
 
-  void setK1TimerStatus(bool timerStatus) // MÉTODO PARA CAMBIAR EL MODO DEL RELÉ K1
+// MÉTODOS DE LOS RELÉS  
+  void setRelayActive(String relay, bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ
   {
-    configDoc["Relay"]["K1"]["timerStatus"] = timerStatus;
+
+    configDoc["Relay"][relay]["active"] = active;
     saveConfig();
   }
 
-  void setK1Name(String name)  // MÉTODO PARA CAMBIAR EL NOMBRE DEL RELÉ K1
+  void setRelayTimerState(String relay, bool timerState) // MÉTODO PARA CAMBIAR EL ESTADO DEL TEMPORIZADOR DEL RELÉ
   {
-    configDoc["Relay"]["K1"]["name"] = name;
+    configDoc["Relay"][relay]["timerState"] = timerState;
     saveConfig();
-    Serial.print("Nombre del relé K1 actualizado a ");
-    Serial.println(name);
   }
 
-  void setK1State(String state) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K1
+  void setRelayName(String relay, String name) // MÉTODO PARA CAMBIAR EL NOMBRE DEL RELÉ
+  {
+    configDoc["Relay"][relay]["name"] = name;
+    saveConfig();
+  }
+
+  void setRelayRemainingTime(String relay, int remainingTime) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ
+  {
+    configDoc["Relay"][relay]["remainingTime"] = remainingTime;
+    saveConfig();
+  }
+
+  void setRelayState(String relay, String state) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ
+  {
+      configDoc["Relay"][relay]["state"] = state;
+      saveConfig();
+  }
+
+  void setAllRelayState(String state) // MÉTODO PARA CAMBIAR EL ESTADO DE TODOS LOS RELÉS
   {
     configDoc["Relay"]["K1"]["state"] = state;
-    saveConfig();
-  }
-
-  void setK1TimerSelected(unsigned long timerSelected) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K1
-  {
-    configDoc["Relay"]["K1"]["timerSelected"] = timerSelected;
-    saveConfig();
-  }
-
-  void setK1Timer(int timer) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K1
-  {
-    configDoc["Relay"]["K1"]["timer"] = timer;
-    saveConfig();
-  }
-
-  void setK1ActivationTime(unsigned long activationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE ACTIVACIÓN DEL RELÉ K1
-  {
-    configDoc["Relay"]["K1"]["activationTime"] = activationTime;
-    saveConfig();
-  }
-
-  void setK1DeactivationTime(unsigned long deactivationTime)  // MÉTODO PARA CAMBIAR EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K1
-  {
-    configDoc["Relay"]["K1"]["deactivationTime"] = deactivationTime;
-    saveConfig();
-  }
-
-  //MÉTODOS DE K2
-  void setK2Active(bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K2
-  {
-    if (active)
-    {
-      configDoc["Relay"]["K2"]["active"] = true;
-      saveConfig();
-      Serial.println("Relé K2 activado");
-    }
-    else
-    {
-      configDoc["Relay"]["K2"]["active"] = false;
-      saveConfig();
-      Serial.println("Relé K2 desactivado");
-    }
-  }
-
-  void setK2TimerStatus(bool timerStatus) // MÉTODO PARA CAMBIAR EL MODO DEL RELÉ K1
-  {
-    configDoc["Relay"]["K2"]["timerStatus"] = timerStatus;
-    saveConfig();
-  }
-
-  void setK2Name(String name) // MÉTODO PARA CAMBIAR EL NOMBRE DEL RELÉ K2
-  {
-    configDoc["Relay"]["K2"]["name"] = name;
-    saveConfig();
-    Serial.print("Nombre del relé K2 actualizado a ");
-    Serial.println(name);
-  }
-
-  void setK2State(String state) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K2
-  {
     configDoc["Relay"]["K2"]["state"] = state;
-    saveConfig();
-  }
-
-  void setK2TimerSelected(unsigned long timerSelected) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K2
-  {
-    configDoc["Relay"]["K2"]["timerSelected"] = timerSelected;
-    saveConfig();
-  }
-  
-  void setK2Timer(int timer) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K2
-  {
-    configDoc["Relay"]["K2"]["timer"] = timer;
-    saveConfig();
-  }
-
-  void setK2ActivationTime(unsigned long activationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE ACTIVACIÓN DEL RELÉ K2
-  {
-    configDoc["Relay"]["K2"]["activationTime"] = activationTime;
-    saveConfig();
-  }
-
-  void setK2DeactivationTime(unsigned long deactivationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K2
-  {
-    configDoc["Relay"]["K2"]["deactivationTime"] = deactivationTime;
-    saveConfig();
-  }
-
-  //MÉTODOS DE K3
-  void setK3Active(bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K3
-  {
-    if (active)
-    {
-      configDoc["Relay"]["K3"]["active"] = true;
-      saveConfig();
-      Serial.println("Relé K3 activado");
-    }
-    else
-    {
-      configDoc["Relay"]["K3"]["active"] = false;
-      saveConfig();
-      Serial.println("Relé K3 desactivado");
-    }
-  }
-
-  void setK3TimerStatus(bool timerStatus) // MÉTODO PARA CAMBIAR EL MODO DEL RELÉ K1
-  {
-    configDoc["Relay"]["K3"]["timerStatus"] = timerStatus;
-    saveConfig();
-  }
-
-  void setK3Name(String name) // MÉTODO PARA CAMBIAR EL NOMBRE DEL RELÉ K3
-  {
-    configDoc["Relay"]["K3"]["name"] = name;
-    saveConfig();
-    Serial.print("Nombre del relé K3 actualizado a ");
-    Serial.println(name);
-  }
-
-  void setK3State(String state) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K3
-  {
     configDoc["Relay"]["K3"]["state"] = state;
-    saveConfig();
-  }
-
-  void setK3TimerSelected(unsigned long timerSelected) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K3
-  {
-    configDoc["Relay"]["K3"]["timerSelected"] = timerSelected;
-    saveConfig();
-  }
-  
-  void setK3Timer(int timer) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K3
-  {
-    configDoc["Relay"]["K3"]["timer"] = timer;
-    saveConfig();
-  }
-
-  void setK3ActivationTime(unsigned long activationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE ACTIVACIÓN DEL RELÉ K3
-  {
-    configDoc["Relay"]["K3"]["activationTime"] = activationTime;
-    saveConfig();
-  }
-
-  void setK3DeactivationTime(unsigned long deactivationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K3
-  {
-    configDoc["Relay"]["K3"]["deactivationTime"] = deactivationTime;
-    saveConfig();
-  }
-
-  //MÉTODOS DE K4
-  void setK4Active(bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K4
-  {
-    if (active)
-    {
-      configDoc["Relay"]["K4"]["active"] = true;
-      saveConfig();
-      Serial.println("Relé K4 activado");
-    }
-    else
-    {
-      configDoc["Relay"]["K4"]["active"] = false;
-      saveConfig();
-      Serial.println("Relé K4 desactivado");
-    }
-  }
-
-  void setK4TimerStatus(bool timerStatus) // MÉTODO PARA CAMBIAR EL MODO DEL RELÉ K1
-  {
-    configDoc["Relay"]["K4"]["timerStatus"] = timerStatus;
-    saveConfig();
-  }
-
-  void setK4Name(String name) // MÉTODO PARA CAMBIAR EL NOMBRE DEL RELÉ K4
-  {
-    configDoc["Relay"]["K4"]["name"] = name;
-    saveConfig();
-    Serial.print("Nombre del relé K4 actualizado a ");
-    Serial.println(name);
-  }
-
-  void setK4State(String state) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ K4
-  {
     configDoc["Relay"]["K4"]["state"] = state;
     saveConfig();
   }
 
-  void setK4TimerSelected(unsigned long timerSelected) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K4
+  void setRelayTimerSelected(String relay, unsigned long timerSelected) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ
   {
-    configDoc["Relay"]["K4"]["timerSelected"] = timerSelected;
+    configDoc["Relay"][relay]["timerSelected"] = timerSelected;
     saveConfig();
   }
-
-  void setK4Timer(int timer) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ K4
-  {
-    configDoc["Relay"]["K4"]["timer"] = timer;
-    saveConfig();
-  }
- 
-  void setK4ActivationTime(unsigned long activationTime) // MÉTODO PARA CAMBIAR EL TIEMPO DE ACTIVACIÓN DEL RELÉ K4
-  {
-    configDoc["Relay"]["K4"]["activationTime"] = activationTime;
-    saveConfig();
-  }
-
-  void setK4DeactivationTime(unsigned long deactivationTime)  // MÉTODO PARA CAMBIAR EL TIEMPO DE DESACTIVACIÓN DEL RELÉ K4
-  {
-    configDoc["Relay"]["K4"]["deactivationTime"] = deactivationTime;
-    saveConfig();
-  }
-
-
+  
 };
 
 #endif

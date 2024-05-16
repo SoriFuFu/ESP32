@@ -4,7 +4,7 @@ import { BsSearchHeart, BsEye, BsEyeSlash } from "react-icons/bs";
 import { FaUpload } from "react-icons/fa";
 import { showErrorAlert, showSuccessAlert } from './alerts';
 
-const Relay = ({ relay, setK1EnabledConfig, setK2EnabledConfig, setK3EnabledConfig, setK4EnabledConfig, setK1NameConfig, setK2NameConfig, setK3NameConfig, setK4NameConfig,  webSocket }) => {
+const Relay = ({ relay, setEnabledConfig, setNameConfig, webSocket }) => {
     const [K1Enabled, setK1Enabled] = useState(relay.K1.active);
     const [K1Name, setK1Name] = useState(relay.K1.name);
     const [K2Enabled, setK2Enabled] = useState(relay.K2.active);
@@ -17,7 +17,7 @@ const Relay = ({ relay, setK1EnabledConfig, setK2EnabledConfig, setK3EnabledConf
     const updateRelayConfig = (relayName, status) => {
         if (relayName === 'K1') {
             setK1Enabled(status);
-            setK1EnabledConfig(status);
+            setEnabledConfig('K1',status);
             if (webSocket) {
                 let message = { action: 'setRelayActive', relay: "K1", K1Active: status};
                 webSocket.send(JSON.stringify(message));
@@ -26,7 +26,7 @@ const Relay = ({ relay, setK1EnabledConfig, setK2EnabledConfig, setK3EnabledConf
             }
         } else if (relayName === 'K2') {
             setK2Enabled(status);
-            setK2EnabledConfig(status);
+            setEnabledConfig('K2',status);
             if (webSocket) {
                 let message = { action: 'setRelayActive', relay: "K2", K2Active: status};
                 webSocket.send(JSON.stringify(message));
@@ -36,7 +36,7 @@ const Relay = ({ relay, setK1EnabledConfig, setK2EnabledConfig, setK3EnabledConf
             
         } else if (relayName === 'K3') {
             setK3Enabled(status);
-            setK3EnabledConfig(status);
+            setEnabledConfig('K3',status);
             if (webSocket) {
                 let message = { action: 'setRelayActive', relay: "K3", K3Active: status};
                 webSocket.send(JSON.stringify(message));
@@ -46,7 +46,7 @@ const Relay = ({ relay, setK1EnabledConfig, setK2EnabledConfig, setK3EnabledConf
             
         } else if (relayName === 'K4') {
             setK4Enabled(status);
-            setK4EnabledConfig(status);
+            setEnabledConfig('K4',status);
             if (webSocket) {
                 let message = { action: 'setRelayActive', relay: "K4", K4Active: status};
                 webSocket.send(JSON.stringify(message));
@@ -62,22 +62,22 @@ const Relay = ({ relay, setK1EnabledConfig, setK2EnabledConfig, setK3EnabledConf
                 let message = { action: 'setRelayName', relay: "K1", relayName: K1Name};
                 webSocket.send(JSON.stringify(message));
                 setK1Name(K1Name);
-                setK1NameConfig(K1Name);
+                setNameConfig('K1',K1Name);
             } else if (relay === 2) {
                 let message = { action: 'setRelayName', relay: "K2",  relayName: K2Name };
                 webSocket.send(JSON.stringify(message));
                 setK2Name(K2Name);
-                setK2NameConfig(K2Name);
+                setNameConfig('K2',K2Name);
             } else if (relay === 3) {
                 let message = { action: 'setRelayName', relay: "K3", relayName: K3Name };
                 webSocket.send(JSON.stringify(message));
                 setK3Name(K3Name);
-                setK3NameConfig(K3Name);
+                setNameConfig('K3',K3Name);
             } else if (relay === 4) {
                 let message = { action: 'setRelayName', relay: "K4", relayName: K4Name };
                 webSocket.send(JSON.stringify(message));
                 setK4Name(K4Name);
-                setK4NameConfig(K4Name);
+                setNameConfig('K4',K4Name);
             }
 
         } else {

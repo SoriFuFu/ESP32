@@ -37,35 +37,39 @@
     "Relay": {
         "K1": {
             "active": true,
-            "timerStatus": false,
+            "timerState": false,
+            "isOn": false,
             "name": "Dispositivo1",
             "state": "INACTIVE",
             "timerSelected": 0,
-            "timer": 0
+            "remainingTime": 0
         },
         "K2": {
             "active": true,
-            "timerStatus": false,
+            "timerState": false,
+            "isOn": false,
             "name": "Dispositivo2",
             "state": "INACTIVE",
             "timerSelected": 0,
-            "timer": 0
+            "remainingTime": 0
         },
         "K3": {
             "active": false,
-            "timerStatus": false,
+            "timerState": false,
+            "isOn": false,
             "name": "Dispositivo3",
             "state": "INACTIVE",
             "timerSelected": 0,
-            "timer": 0
+            "remainingTime": 0
         },
         "K4": {
             "active": false,
-            "timerStatus": false,
+            "timerState": false,
+            "isOn": false,
             "name": "Dispositivo4",
             "state": "INACTIVE",
             "timerSelected": 0,
-            "timer": 0
+            "remainingTime": 0
         }
     }
 }

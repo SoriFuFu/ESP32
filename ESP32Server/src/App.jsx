@@ -15,24 +15,16 @@ const App = () => {
     const [apStatus, setApStatus] = useState(false);
     const [apConfig, setApConfig] = useState({});
     const [relay, setRelay] = useState({});
-    const [webSocket, setWebSocket] = useState(null);
-    
-
-    useEffect(() => {
-        handleGetConfig();
-    }, []);
 
     const handleGetConfig = () => {
-        const ws = new WebSocket('ws://192.168.1.222:81');
-        // const ws = new WebSocket('ws://192.168.4.1:81');
-        // const ws = new WebSocket('ws://' + window.location.hostname + ':81');
-        setWebSocket(ws);
-        
+        // const ws = new WebSocket('ws://192.168.1.222:82');
+        const ws = new WebSocket('ws://bubela.duckdns.org:82');
+        // const ws = new WebSocket('ws://' + window.location.hostname + ':82');
+
         ws.onopen = () => {
             let message = { action: 'getConfig' };
             ws.send(JSON.stringify(message));
         };
-        
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             setWifiConfig(data.Wifi);
@@ -41,6 +33,8 @@ const App = () => {
             setApConfig(data.AP);
             setRelay(data.Relay);
             setIsLoading(false);
+            
+            ws.close(); // Cerrar la conexión después de recibir el mensaje
         };
 
         ws.onerror = (error) => {
@@ -51,6 +45,12 @@ const App = () => {
             console.log('Conexión WebSocket cerrada');
         };
     };
+
+    useEffect(() => {
+        handleGetConfig();
+    }, []);
+
+    
     const hundleSetWifiStatus = (status) => {
         setWifiStatus(status);
         console.log('hundleSetWifiStatus', status);
@@ -83,32 +83,14 @@ const App = () => {
     
 
       
-    const hundleSetK1Enable = (status) => {
-        updateRelayApp('K1', status);
+    const hundleSetEnable = (relay, status) => {
+        updateRelayApp(relay, status);
     }
-    const hundleSetK2Enable = (status) => {
-        updateRelayApp('K2', status);
+  
+    const hundleSetName = (relay, name) => {
+        updateRelayApp(relay, name);
     }
-    const hundleSetK3Enable = (status) => {
-        updateRelayApp('K3', status);
-    }
-    const hundleSetK4Enable = (status) => {
-        updateRelayApp('K4', status);
-    }
-
-    const hundleSetK1Name = (name) => {
-        updateRelayApp('K1', name);
-    }
-    const hundleSetK2Name = (name) => {
-        updateRelayApp('K2', name);
-    }
-    const hundleSetK3Name = (name) => {
-        updateRelayApp('K3', name);
-    }
-    const hundleSetK4Name = (name) => {
-        updateRelayApp('K4', name);
-    }
-
+   
 
     return (
         <Router>
@@ -126,7 +108,7 @@ const App = () => {
                         <Container fluid className="content">
                             <Routes>
                                 <Route path="/panel" element={<Panel Relay={relay} />} />
-                                <Route path="/config/*" element={<Config wifiConfig={wifiConfig} apConfig={apConfig} relay={relay} webSocket={webSocket} setWifiStatusApp={hundleSetWifiStatus} SetApStatusApp={hundleSetApStatus} setK1EnableApp={hundleSetK1Enable} setK2EnableApp={hundleSetK2Enable} setK3EnableApp={hundleSetK3Enable} setK4EnableApp={hundleSetK4Enable} setK1NameApp={hundleSetK1Name} setK2NameApp={hundleSetK2Name} setK3NameApp={hundleSetK3Name} setK4NameApp={hundleSetK4Name}/>} />
+                                <Route path="/config/*" element={<Config wifiConfig={wifiConfig} apConfig={apConfig} relay={relay} setWifiStatusApp={hundleSetWifiStatus} SetApStatusApp={hundleSetApStatus} setEnableApp={hundleSetEnable}  setNameApp={hundleSetName} />} />
                                 
                                 <Route path="*" element={<Navigate to="/panel" replace />} />
                             </Routes>

@@ -2,95 +2,48 @@ import React, { useEffect, useState } from 'react';
 import { Card, Button, Modal, Form, Row, Col } from 'react-bootstrap';
 import { MdTimer, MdTimerOff } from "react-icons/md";
 import { FaPlay, FaPause, FaPowerOff, FaStop } from 'react-icons/fa';
-import { act } from 'react';
 
-const RelayCard = ({ relay, relayKey }) => {
+
+const RelayCard = ({ relay, relayKey, webSocket, updatedTimes  }) => {
     const [isOn, setIsOn] = useState(false);
     const [remainingTime, setRemainingTime] = useState(relay.timer);
     const [relayState, setRelayState] = useState(relay.state);
     const [showModal, setShowModal] = useState(false);
     const [selectedTime, setSelectedTime] = useState(relay.timer);
-    const [webSocket, setWebSocket] = useState(null);
-    const [relayData, setRelayData] = useState(null);
     const [timerStatus, setTimerStatus] = useState(relay.timerStatus);
-
+    console.log(updatedTimes)
     useEffect(() => {
-        let ws;
-        const connectWebSocket = () => {
-            // if (relayKey === 'K1') {
-            //     ws = new WebSocket('ws://' + window.location.hostname + ':83');
-            // } else if (relayKey === 'K2') {
-            //     ws = new WebSocket('ws://' + window.location.hostname + ':84');
-            // } else if (relayKey === 'K3') {
-            //     ws = new WebSocket('ws://' + window.location.hostname + ':85');
-            // } else if (relayKey === 'K4') {
-            //     ws = new WebSocket('ws://' + window.location.hostname + ':86');
-            // }
-
-            if (relayKey === 'K1') {
-                ws = new WebSocket('ws://192.168.1.222:83');
-            } else if (relayKey === 'K2') {
-                ws = new WebSocket('ws://192.168.1.222:84');
-            } else if (relayKey === 'K3') {
-                ws = new WebSocket('ws://192.168.1.222:85');
-            } else if (relayKey === 'K4') {
-                ws = new WebSocket('ws://192.168.1.222:86');
-            }
-
-
-            ws.onopen = () => {
-                setWebSocket(ws);
-            };
-            // ws.onmessage = (event) => {
-            //     const data = JSON.parse(event.data);
-            //     setRelayData(data); // Almacenar los datos recibidos en el estado local
-            // };
-
-            ws.onclose = () => {
-                connectWebSocket(); // Reintentar conexión
-            };
-        };
-
-        connectWebSocket();
-
-        return () => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.close();
-            }
-        };
-    }, []);
+        if (updatedTimes && updatedTimes[`timeK${relayKey}`] !== undefined) {
+            setRemainingTime(updatedTimes[`timeK${relayKey}`]);
+        }
+    }, [updatedTimes, relayKey]);
 
     useEffect(() => {
         if (webSocket) {
             webSocket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                if (data.action === 'UPDATE_TIMER') {
-                    setRemainingTime(data.time);
+                if (data.relay === relayKey) {
+                     if (data.action === 'UPDATE_TIMER_STATUS') {
+                        setTimerStatus(data.status);
+                    } else if (data.action === 'ON') {
+                        setIsOn(true);
+                        setRelayState('ON');
+                    } else if (data.action === 'ACTIVE') {
+                        setRelayState('ACTIVE');
+                    } else if (data.action === 'PAUSE') {
+                        setRelayState('PAUSE');
+                    } else if (data.action === 'CONTINUE') {
+                        setRelayState('ACTIVE');
+                    } else if (data.action === 'INACTIVE') {
+                        setRelayState('INACTIVE');
+                    } else if (data.action === 'OFF') {
+                        setIsOn(false);
+                        setRelayState('OFF');
+                    }
                 }
-                else if (data.action === 'UPDATE_TIMER_STATUS') {
-                    setTimerStatus(data.status);
-                }
-                else if (data.action === 'ON') {
-                    setIsOn(true);
-                    setRelayState('ON');
-                } else if (data.action === 'ACTIVE') {
-                    setRelayState('ACTIVE');
-                } else if (data.action === 'PAUSE') {
-                    setRelayState('PAUSE');
-                    console.log('PAUSE');
-                } else if (data.action === 'CONTINUE') {
-                    setRelayState('ACTIVE');
-                } else if (data.action === 'INACTIVE') {
-                    setRelayState('INACTIVE');
-                } else if (data.action === 'OFF') {
-                    setIsOn(false);
-                    setRelayState('OFF');
-                }
-
             };
         }
     }, [webSocket]);
-
     useEffect(() => {
 
         if (remainingTime === 0) {
@@ -100,13 +53,8 @@ const RelayCard = ({ relay, relayKey }) => {
         }
     }, [remainingTime]);
 
-    useEffect(() => {
-        console.log('RelayState:', relayState);
-    }
-        , [relayState]);
-
     // FUNCION PARA CAMBIAR EL ESTADO DEL RELÉ SIN TIMER
-    const hundleRelayChange = (action) => { 
+    const hundleRelayChange = (action) => {
         if (action === 'ON') {
             setIsOn(true);
         }
@@ -115,7 +63,7 @@ const RelayCard = ({ relay, relayKey }) => {
         }
 
         if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-            let message = { action: action };
+            let message = { relay: relayKey, action: action };
             webSocket.send(JSON.stringify(message));
         } else {
             console.log('WebSocket no está completamente abierto');
@@ -137,7 +85,7 @@ const RelayCard = ({ relay, relayKey }) => {
             setIsOn(true);
         }
         if (webSocket) {
-            let message = { action: action, selectedTime: remainingTime };
+            let message = { relay: relayKey, action: action, selectedTime: remainingTime };
             webSocket.send(JSON.stringify(message));
         }
         else {
@@ -165,7 +113,7 @@ const RelayCard = ({ relay, relayKey }) => {
             setRemainingTime(selectedTime);
             setShowModal(false);
             setRelayState('INACTIVE');
-            let message = { action: 'SET_TIMER', timerStatus: true, selectedTime: selectedTime };
+            let message = { relay: relayKey, action: 'SET_TIMER', timerStatus: true, selectedTime: selectedTime };
             webSocket.send(JSON.stringify(message));
         } else {
             console.log('WebSocket no está inicializado');
@@ -176,7 +124,7 @@ const RelayCard = ({ relay, relayKey }) => {
     const handleTimerOff = () => {
         setTimerStatus(false);
         if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-            let message = { action: 'SET_TIMER', timerStatus: false, selectedTime: selectedTime };
+            let message = { relay: relayKey, action: 'SET_TIMER', timerStatus: false, selectedTime: selectedTime };
             webSocket.send(JSON.stringify(message));
             setShowModal(false);
         } else {
