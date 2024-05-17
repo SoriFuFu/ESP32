@@ -11,6 +11,7 @@ const ApConfig = ({ apConfig, wifiStatus, setApStatusConfig, webSocket }) => {
     const [apStatus, setApStatus] = useState(apConfig.status); // Estado para el estado de la conexión AP
     const [apName, setApName] = useState(apConfig.ssid);
     const [apPassword, setApPassword] = useState(apConfig.password);
+    console.log(webSocket);
 
     //ACTIVAR O DESACTIVAR EL MODO AP
 

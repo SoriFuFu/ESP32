@@ -282,13 +282,11 @@ public:
   void setRelayRemainingTime(String relay, int remainingTime) // MÉTODO PARA CAMBIAR EL TIEMPO DEL TEMPORIZADOR DEL RELÉ
   {
     configDoc["Relay"][relay]["remainingTime"] = remainingTime;
-    saveConfig();
   }
 
   void setRelayState(String relay, String state) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ
   {
       configDoc["Relay"][relay]["state"] = state;
-      saveConfig();
   }
 
   void setAllRelayState(String state) // MÉTODO PARA CAMBIAR EL ESTADO DE TODOS LOS RELÉS

@@ -22,7 +22,12 @@ const App = () => {
         const ws = new WebSocket('ws://' + window.location.hostname + ':82');
 
         ws.onopen = () => {
-            let message = { action: 'getConfig' };
+            const now = new Date();
+            const hourInSeconds = now.getHours() * 3600;
+            const minuteInSeconds = now.getMinutes() * 60;
+            const totalSeconds = hourInSeconds + minuteInSeconds;
+
+            let message = { action: 'getConfig', hour: hourInSeconds, minute: minuteInSeconds };
             ws.send(JSON.stringify(message));
         };
         ws.onmessage = (event) => {
@@ -33,7 +38,7 @@ const App = () => {
             setApConfig(data.AP);
             setRelay(data.Relay);
             setIsLoading(false);
-            
+
             ws.close(); // Cerrar la conexión después de recibir el mensaje
         };
 
@@ -50,7 +55,7 @@ const App = () => {
         handleGetConfig();
     }, []);
 
-    
+
     const hundleSetWifiStatus = (status) => {
         setWifiStatus(status);
         console.log('hundleSetWifiStatus', status);
@@ -80,17 +85,17 @@ const App = () => {
             }));
         }
     };
-    
 
-      
+
+
     const hundleSetEnable = (relay, status) => {
         updateRelayApp(relay, status);
     }
-  
+
     const hundleSetName = (relay, name) => {
         updateRelayApp(relay, name);
     }
-   
+
 
     return (
         <Router>
@@ -108,8 +113,8 @@ const App = () => {
                         <Container fluid className="content">
                             <Routes>
                                 <Route path="/panel" element={<Panel Relay={relay} />} />
-                                <Route path="/config/*" element={<Config wifiConfig={wifiConfig} apConfig={apConfig} relay={relay} setWifiStatusApp={hundleSetWifiStatus} SetApStatusApp={hundleSetApStatus} setEnableApp={hundleSetEnable}  setNameApp={hundleSetName} />} />
-                                
+                                <Route path="/config/*" element={<Config wifiConfig={wifiConfig} apConfig={apConfig} relay={relay} setWifiStatusApp={hundleSetWifiStatus} SetApStatusApp={hundleSetApStatus} setEnableApp={hundleSetEnable} setNameApp={hundleSetName} />} />
+
                                 <Route path="*" element={<Navigate to="/panel" replace />} />
                             </Routes>
                         </Container>

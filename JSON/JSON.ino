@@ -85,8 +85,11 @@ bool displayState = true;
 int menuPage = 1; // PÁGINA DEL DISPLAY
 
 uint8_t clientData = 0; // Variable para rastrear el cliente conectado
-uint8_t clientConfig = 1;
-uint8_t clientRelay = 1;
+uint8_t clientConfig = 255;
+uint8_t clientRelay = 255;
+
+int hour = 7000;
+int minute = 30000;
 
 // SETUP DE LA APLICACIÓN PRINCIPAL
 void setup()
@@ -95,7 +98,6 @@ void setup()
   delay(1000);
   SPIFFS.begin();      // Inicializar el sistema de archivos SPIFFS
   config.loadConfig(); // Cargar la configuración al inicio
-configTime(3600, 0, "pool.ntp.org");
   //***** CONFIGURACIÓN DE LA PANTALLA LCD
   displayLCD.initDisplay();
 
@@ -207,7 +209,14 @@ configTime(3600, 0, "pool.ntp.org");
 
   setMenuPage();
   getConfigData();
+  
 }
+
+void configTimeNow()
+{
+getTime(false);
+}
+
 
 void getConfigData()
 {
@@ -320,11 +329,15 @@ void webSocketEventData(uint8_t num, WStype_t type, uint8_t *payload, size_t len
     deserializeJson(data, message);
 
     String action = data["action"];
+    hour = data["hour"];
+    minute = data["minute"];
     Serial.print("Acción: ");
     Serial.println(action);
     if (action == "getConfig") // Enviar la configuracion al cliente
     {                          //
       updateClientConfig();
+      configTimeNow();
+
     }
   }
   else if (type == WStype_DISCONNECTED)
@@ -550,7 +563,7 @@ void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t l
   {
     if (num == clientConfig)
     {
-      clientConfig = 1; 
+      clientConfig = 255; 
       Serial.print("Cliente ");
       Serial.print(num);
       Serial.println(" se ha desconectado de la configuración");
@@ -717,7 +730,7 @@ void webSocketEventRelay(uint8_t num, WStype_t type, uint8_t *payload, size_t le
   {
     if (num == clientRelay)
     {
-      clientRelay = 1; // Restablecer la variable para permitir una nueva conexión
+      clientRelay = 255; // Restablecer la variable para permitir una nueva conexión
       Serial.print("Cliente ");
       Serial.print(num);
       Serial.println(" se ha desconectado del servidor de relés");
@@ -859,6 +872,7 @@ void finallyRelayTimer(int relay, String relayNumber, RelayState &state, unsigne
   relayInactive(relay, state);
   remainingTime = config.getRelayTimerSelected(relayNumber);
   config.setRelayRemainingTime(relayNumber, remainingTime);
+  config.setRelayState(relayNumber, "INACTIVE");
   sendRemainingTime();
   sendRelayStatus(relayNumber, "INACTIVE");
   LCD_UpdateTimer(relayNumber);
@@ -885,7 +899,7 @@ void loop()
   if (tiempoActual - ultimoTiempo >= INTERVALODELECTURA1SEG)
   {
     ultimoTiempo = tiempoActual; // ACTUALIZAR EL TIEMPO DE LA ÚLTIMA LECTURA
-    getTime();                   // ACTUALIZAR LA HORA
+    getTime(true);                   // ACTUALIZAR LA HORA
 
     // getTemperature(); // ACTUALIZAR LA TEMPERATURA
   }
@@ -1247,18 +1261,21 @@ void factoryReset() // RESTABLECER LA CONFIGURACIÓN DE FÁBRICA
 
 //***** FUNCIONES DE OBTENCIÓN DE DATOS
 
-void getTime() {
+void getTime(bool initial) {
     static bool initialized = false;
     static unsigned long lastAttemptTime = 0;
     const unsigned long interval = 30000; // Intervalo de reintento en milisegundos
-
+    if (!initial ) {
+        initialized = false;
+    }
     if (!initialized || millis() - lastAttemptTime >= interval) {
         if (!initialized) {
             Serial.println("Configurando la hora...");
             initialized = true;
         }
         // Intenta configurar la hora
-        configTime(3600, 0, "pool.ntp.org");
+        int minutes = minute * 60;
+        configTime(hour, minutes, "pool.ntp.org");
         lastAttemptTime = millis();
     }
 
