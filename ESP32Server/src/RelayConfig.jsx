@@ -9,10 +9,6 @@ const Relay = ({ relay, setEnabledConfig, setNameConfig, webSocket }) => {
     const [K1Name, setK1Name] = useState(relay.K1.name);
     const [K2Enabled, setK2Enabled] = useState(relay.K2.active);
     const [K2Name, setK2Name] = useState(relay.K2.name);
-    const [K3Enabled, setK3Enabled] = useState(relay.K3.active);
-    const [K3Name, setK3Name] = useState(relay.K3.name);
-    const [K4Enabled, setK4Enabled] = useState(relay.K4.active);
-    const [K4Name, setK4Name] = useState(relay.K4.name);
 
     const updateRelayConfig = (relayName, status) => {
         if (relayName === 'K1') {
@@ -34,26 +30,7 @@ const Relay = ({ relay, setEnabledConfig, setNameConfig, webSocket }) => {
                 console.log('WebSocket no está inicializado');
             }
             
-        } else if (relayName === 'K3') {
-            setK3Enabled(status);
-            setEnabledConfig('K3',status);
-            if (webSocket) {
-                let message = { action: 'setRelayActive', relay: "K3", K3Active: status};
-                webSocket.send(JSON.stringify(message));
-            }else {
-                console.log('WebSocket no está inicializado');
-            }
-            
-        } else if (relayName === 'K4') {
-            setK4Enabled(status);
-            setEnabledConfig('K4',status);
-            if (webSocket) {
-                let message = { action: 'setRelayActive', relay: "K4", K4Active: status};
-                webSocket.send(JSON.stringify(message));
-            } else {
-                console.log('WebSocket no está inicializado');
-            }
-        }
+        } 
     }
 
     const setRelayName = (relay) => {
@@ -68,17 +45,7 @@ const Relay = ({ relay, setEnabledConfig, setNameConfig, webSocket }) => {
                 webSocket.send(JSON.stringify(message));
                 setK2Name(K2Name);
                 setNameConfig('K2',K2Name);
-            } else if (relay === 3) {
-                let message = { action: 'setRelayName', relay: "K3", relayName: K3Name };
-                webSocket.send(JSON.stringify(message));
-                setK3Name(K3Name);
-                setNameConfig('K3',K3Name);
-            } else if (relay === 4) {
-                let message = { action: 'setRelayName', relay: "K4", relayName: K4Name };
-                webSocket.send(JSON.stringify(message));
-                setK4Name(K4Name);
-                setNameConfig('K4',K4Name);
-            }
+            } 
 
         } else {
             console.log('WebSocket no está inicializado');
@@ -125,43 +92,6 @@ const Relay = ({ relay, setEnabledConfig, setNameConfig, webSocket }) => {
                 </Card>
             </Col>
 
-            <Col md={6}>
-                <Card className="mb-3">
-                    <Card.Header className="d-flex flex-row justify-content-between align-items-center">
-                        <h5 className="mb-0">K3</h5>
-                        <Form.Switch className="float-end" checked={K3Enabled} onChange={(e) => updateRelayConfig("K3",e.target.checked)} />
-                    </Card.Header>
-                    <Card.Body hidden={!K3Enabled}>
-                        <Form.Group as={Row} className="mb-3">
-                            <Form.Label column sm={3}>Nombre</Form.Label>
-                            <Col sm={9}>
-                                <Form.Control type="text" value={K3Name} onChange={(e) => setK3Name(e.target.value)} />
-                            </Col>
-                        </Form.Group>
-
-                        <Button variant="primary" onClick={() => setRelayName(3)} className="d-flex align-items-center"> <FaUpload className="me-1" /> Cargar</Button>
-                    </Card.Body>
-                </Card>
-            </Col>
-
-            <Col md={6}>
-                <Card className="mb-3">
-                    <Card.Header className="d-flex flex-row justify-content-between align-items-center">
-                        <h5 className="mb-0">K4</h5>
-                        <Form.Switch className="float-end" checked={K4Enabled} onChange={(e) => updateRelayConfig("K4",e.target.checked)} />
-                    </Card.Header>
-                    <Card.Body hidden={!K4Enabled}>
-                        <Form.Group as={Row} className="mb-3">
-                            <Form.Label column sm={3}>Nombre</Form.Label>
-                            <Col sm={9}>
-                                <Form.Control type="text" value={K4Name} onChange={(e) => setK4Name(e.target.value)} />
-                            </Col>
-                        </Form.Group>
-
-                        <Button variant="primary" onClick={() => setRelayName(4)} className="d-flex align-items-center"> <FaUpload className="me-1" /> Cargar</Button>
-                    </Card.Body>
-                </Card>
-            </Col>
         </Row> 
 
     );

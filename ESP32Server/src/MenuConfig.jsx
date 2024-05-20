@@ -1,7 +1,8 @@
 import { Nav } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { BsInfoLg, BsWifi } from "react-icons/bs";
-import { TbAccessPoint, TbAccessPointOff  } from "react-icons/tb";
+import { TbAccessPoint, TbAccessPointOff} from "react-icons/tb";
+import { PiListBulletsFill } from "react-icons/pi";
 import { MdLockReset } from "react-icons/md";
 
 import { IoIosSwitch } from "react-icons/io";
@@ -23,6 +24,9 @@ const MenuConfig = ({ wifiEnabled, apEnabled }) => {
             </Nav.Item>
             <Nav.Item>
                 <Nav.Link as={Link} to="/config/reset" className='d-flex justify-content-center align-items-center'> <MdLockReset className='me-2'/>Reset</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+                <Nav.Link as={Link} to="/config/log" className='d-flex justify-content-center align-items-center'><PiListBulletsFill className='me-2' /> Logs</Nav.Link>
             </Nav.Item>
         </Nav>
     );

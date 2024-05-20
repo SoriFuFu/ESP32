@@ -7,6 +7,7 @@ import ApConfig from './ApConfig';
 import RelayConfig from './RelayConfig';
 import Info from './Info';
 import Reset from './Reset';
+import Logs from './Logs';
 
 const Config = ({ wifiConfig, apConfig, relay, setWifiStatusApp, SetApStatusApp, setEnableApp,  setNameApp }) => {
     const [apStatus, setApStatus] = useState(apConfig.status);
@@ -87,6 +88,7 @@ const Config = ({ wifiConfig, apConfig, relay, setWifiStatusApp, SetApStatusApp,
                 <Route path="/ap" element={<ApConfig apConfig={apConfig} wifiStatus={wifiStatus} setApStatusConfig={hundleSetApStatus} webSocket={webSocket} />} />
                 <Route path="/relay" element={<RelayConfig relay={relayConfig} setEnabledConfig={hundleSetEnable}  setNameConfig={hundleSetName} webSocket={webSocket} />} />
                 <Route path="/reset" element={<Reset webSocket={webSocket} />} />
+                <Route path="/log" element={<Logs />} />
                 <Route path="*" element={<Navigate to="/config/info" replace />} />
             </Routes>
         </div>

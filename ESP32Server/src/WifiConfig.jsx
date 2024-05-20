@@ -43,6 +43,11 @@ const WifiConfigComponent = ({ wifiConfig, apStatus, setWifiStatusConfig, webSoc
     //CONFIGURAR WIFI
     const setConfigWifi = () => {
         setIsLoadingSetWifiConfig(true);
+        if (selectedNetwork === '' || wifiPassword === '' || staticWifiIP === '' || staticSubnetMask === '' || staticGateway === '') {
+            showErrorAlert('Debes llenar todos los campos');
+            setIsLoadingSetWifiConfig(false);
+            return;
+        }
         if (webSocket) {
             let message = { action: 'setWifiConfig', wifiActive: true, ssid: selectedNetwork, password: wifiPassword, ip: staticWifiIP, subnet: staticSubnetMask, gateway: staticGateway };
             webSocket.send(JSON.stringify(message));
@@ -54,6 +59,7 @@ const WifiConfigComponent = ({ wifiConfig, apStatus, setWifiStatusConfig, webSoc
                     const IP = dataJson.ip;
                     const Subnet = dataJson.subnet;
                     const Gateway = dataJson.gateway;
+                    setWifiSSID(selectedNetwork);
                     setStaticWifiIP(IP);
                     setStaticSubnetMask(Subnet);
                     setStaticGateway(Gateway);
@@ -173,7 +179,7 @@ const WifiConfigComponent = ({ wifiConfig, apStatus, setWifiStatusConfig, webSoc
                             <Form.Label column sm={3}>Red WiFi:</Form.Label>
                             <div className="d-flex flex-row align-items-center">
                                 <Form.Select value={selectedNetwork} onChange={(e) => setSelectedNetwork(e.target.value)} >
-                                    <option value="">{wifiSSID !== '' ? wifiSSID : 'Selecciona una red'}</option>
+                                    <option value={wifiSSID}>{wifiSSID !== '' ? wifiSSID : 'Selecciona una red'}</option>
 
                                     {networks.map((network, index) => (
                                         <option key={index} value={network}>{network}</option>

@@ -23,11 +23,14 @@ const App = () => {
 
         ws.onopen = () => {
             const now = new Date();
-            const hourInSeconds = now.getHours() * 3600;
-            const minuteInSeconds = now.getMinutes() * 60;
-            const totalSeconds = hourInSeconds + minuteInSeconds;
+            const hour = now.getHours() ;
+            const minute = now.getMinutes() ;
+            const seconds = now.getSeconds() ;
+            const day = now.getDay();
+            const month = now.getMonth();
+            const year = now.getFullYear();
 
-            let message = { action: 'getConfig', hour: hourInSeconds, minute: minuteInSeconds };
+            let message = { action: 'getConfig', hour: hour, minute: minute, seconds: seconds, day: day, month: month, year: year};
             ws.send(JSON.stringify(message));
         };
         ws.onmessage = (event) => {

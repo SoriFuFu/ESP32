@@ -11,8 +11,6 @@ const Panel = ({ Relay }) => {
     const [relayStates, setRelayStates] = useState({
         K1: Relay.K1,
         K2: Relay.K2,
-        K3: Relay.K3,
-        K4: Relay.K4,
     });
 
     useEffect(() => {
@@ -26,15 +24,7 @@ const Panel = ({ Relay }) => {
                 ...prevState.K2,
                 remainingTime: Relay.K2.active ? Relay.K2.remainingTime :  Relay.K2.timerSelected,
             },
-            K3: {
-                ...prevState.K3,
-                remainingTime: Relay.K3.active ? Relay.K3.remainingTime :  Relay.K3.timerSelected,
 
-            },
-            K4: {
-                ...prevState.K4,
-                remainingTime: Relay.K4.active ? Relay.K4.remainingTime :  Relay.K4.timerSelected,
-            },
         }));
     }, []);
     
@@ -73,14 +63,6 @@ const Panel = ({ Relay }) => {
                         K2: {
                             ...prevState.K2,
                             remainingTime: data.timeK2,
-                        },
-                        K3: {
-                            ...prevState.K3,
-                            remainingTime: data.timeK3,
-                        },
-                        K4: {
-                            ...prevState.K4,
-                            remainingTime: data.timeK4,
                         },
                     }));
                 } else if (data.relay in Relay) {
