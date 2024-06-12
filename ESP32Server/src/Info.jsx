@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Row, Col } from 'react-bootstrap';
 
-const InfoConfig = ({ wifiConfig, apConfig, relay }) => {
+const InfoConfig = ({ deviceInfo, wifiConfig, apConfig, relay }) => {
 
     const renderStatus = (status) => {
         if (status) {
@@ -18,6 +18,19 @@ const InfoConfig = ({ wifiConfig, apConfig, relay }) => {
                 </Col>
             </Row>
             <Row>
+                <Col md={6} className='mb-3'>
+                    <Card>
+                        <Card.Body>
+                            <Card.Title>Información del equipo</Card.Title>
+                            <Card.Text><strong>Nombre:</strong> {deviceInfo.name}</Card.Text>
+                            <Card.Text><strong>Número de serie:</strong> {deviceInfo.serialNumber}</Card.Text>
+                            <Card.Text><strong>Versión de firmware:</strong> {deviceInfo.firmwareVersion}</Card.Text>
+                            <Card.Text><strong>Última fecha de reinicio:</strong> {deviceInfo.lastReboot}</Card.Text>
+                            {/* Agrega más detalles de la información del equipo aquí */}
+                        </Card.Body>
+                    </Card>
+                </Col>
+
                 <Col md={6} className='mb-3'>
                     <Card>
                         <Card.Body>

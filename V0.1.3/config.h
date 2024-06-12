@@ -163,6 +163,12 @@ public:
 
 
   //*****SETTERS *****//
+  void setLastReboot(String lastReboot) // MÉTODO PARA CAMBIAR LA FECHA DEL ÚLTIMO REINICIO
+  {
+    configDoc["Device"]["lastReboot"] = lastReboot;
+    saveConfig();
+  }
+
   void cleanWifiConfig() // MÉTODO PARA LIMPIAR LOS DATOS DE LA RED WIFI
   {
     configDoc["Wifi"]["active"] = false;

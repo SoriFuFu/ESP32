@@ -1,9 +1,10 @@
 {
     "Device": {
         "name": "BaBuIoT",
-        "version": "1.0.0",
+        "firmwareVersion": "1.0.0",
         "status": "ACTIVE",
-        "lastUpdate": "2021-09-01 12:00:00"
+        "serialNumber": "B020223",
+        "lastReboot": "2021-09-01 12:00:00"
     },
     "Wifi": {
         "active": true,

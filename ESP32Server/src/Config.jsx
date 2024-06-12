@@ -9,73 +9,19 @@ import Info from './Info';
 import Reset from './Reset';
 import Logs from './Logs';
 
-const Config = ({ wifiConfig, apConfig, relay, setWifiStatusApp, SetApStatusApp, setEnableApp,  setNameApp }) => {
-    const [apStatus, setApStatus] = useState(apConfig.status);
+const Config = ({ webSocket, deviceInfo, wifiConfig, wifiNetworks, apConfig, relayConfig, logs, updateWifiConfigApp, updateApConfigApp, updateRelayApp }) => {
     const [wifiStatus, setWifiStatus] = useState(wifiConfig.status);
-    const [relayConfig, setRelayConfig] = useState(relay);
-    const [webSocket, setWebSocket] = useState(null);
-    
-    useEffect(() => {
-        handleGetConfig();
-    }, []);
+    const [apStatus, setApStatus] = useState(apConfig.status);
 
-    const handleGetConfig = () => {
-        // const ws = new WebSocket('ws://192.168.1.222:81');
-        // const ws = new WebSocket('ws://bubela.duckdns.org:81');
-        const ws = new WebSocket('ws://' + window.location.hostname + ':81');
-        setWebSocket(ws);
-        
-        ws.onerror = (error) => {
-            console.error('Error en WebSocket:', error);
-        };
-
-        ws.onclose = () => {
-            console.log('Conexión WebSocket cerrada');
-        };
+    const updateWifiConfig = (object, data) => {
+        updateWifiConfigApp(object, data);
     };
-    
-    const hundleSetWifiStatus = (status) => {
-        setWifiStatus(status);
-        setWifiStatusApp(status);
+    const updateApConfig = (object, data) => {
+        updateApConfigApp(object, data);
     };
-    const hundleSetApStatus = (status) => {
-        setApStatus(status);
-        SetApStatusApp(status);
+    const updateRelay = (relayName, object, data) => {
+        updateRelayApp(relayName, object, data);
     };
-
-    const updateRelayConfig = (relayName, statusOrName) => {
-        if (typeof statusOrName === 'boolean') {
-            // Actualizar estado del relé
-            setRelayConfig(prevConfig => ({
-                ...prevConfig,
-                [relayName]: {
-                    ...prevConfig[relayName],
-                    active: statusOrName
-                }
-            }));
-        } else {
-            // Actualizar nombre del relé
-            setRelayConfig(prevConfig => ({
-                ...prevConfig,
-                [relayName]: {
-                    ...prevConfig[relayName],
-                    name: statusOrName
-                }
-            }));
-        }
-    };
-    
-    const hundleSetEnable = (relay, status) => {
-        updateRelayConfig(relay, status);
-        setEnableApp(relay, status);
-        console.log(relayConfig);
-    }
-    
-    const hundleSetName = (relay, name) => {
-        updateRelayConfig(relay, name);
-        setNameApp(relay, name);
-        
-    }
     
 
     return (
@@ -83,12 +29,12 @@ const Config = ({ wifiConfig, apConfig, relay, setWifiStatusApp, SetApStatusApp,
             <MenuConfig />
 
             <Routes>
-                <Route path="/info" element={<Info wifiConfig={wifiConfig} apConfig={apConfig} relay={relayConfig} />} />
-                <Route path="/wifi" element={<WifiConfigComponent wifiConfig={wifiConfig} apStatus={apStatus} setWifiStatusConfig={hundleSetWifiStatus} webSocket={webSocket} />} />
-                <Route path="/ap" element={<ApConfig apConfig={apConfig} wifiStatus={wifiStatus} setApStatusConfig={hundleSetApStatus} webSocket={webSocket} />} />
-                <Route path="/relay" element={<RelayConfig relay={relayConfig} setEnabledConfig={hundleSetEnable}  setNameConfig={hundleSetName} webSocket={webSocket} />} />
+                <Route path="/info" element={<Info deviceInfo={deviceInfo} wifiConfig={wifiConfig} apConfig={apConfig} relay={relayConfig} />} />
+                <Route path="/wifi" element={<WifiConfigComponent wifiConfig={wifiConfig} wifiNetworks={wifiNetworks} apStatus={apStatus} updateWifiConfig={updateWifiConfig} webSocket={webSocket} />} />
+                <Route path="/ap" element={<ApConfig apConfig={apConfig} wifiStatus={wifiStatus} updateApConfig={updateApConfig} webSocket={webSocket} />} />
+                <Route path="/relay" element={<RelayConfig relay={relayConfig} updateRelay={updateRelay} webSocket={webSocket} />} />
                 <Route path="/reset" element={<Reset webSocket={webSocket} />} />
-                <Route path="/log" element={<Logs />} />
+                <Route path="/log" element={<Logs webSocket={webSocket} logs={logs}/>} />
                 <Route path="*" element={<Navigate to="/config/info" replace />} />
             </Routes>
         </div>

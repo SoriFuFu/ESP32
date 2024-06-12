@@ -5,32 +5,25 @@
 #include <Bounce2.h>
 #include "wifi_config.h"
 #include <ESPAsyncWebServer.h>
-#include <WebSocketsServer.h>
 #include <Ticker.h>
-// #include "esp_task_wdt.h"
-// #include "esp_int_wdt.h"
+#include <ArduinoJson.h>
+#include <AsyncTCP.h>
 
-ConfigManager config;                                    // OBJETO DE LA CLASE ConfigManager
-WifiConfig wifiConfig;                                   // OBJETO DE LA CLASE WifiConfig
-Pantalla displayLCD(LCD_ADDR, SDA, SCL);                 // OBJETO DE LA PANTALLA LCD                                   // OBJETO DEL SENSOR BMP280
-LogManager logSave;                                      // OBJETO DE LA CLASE LogManager
-ESP32Time rtc(0);                                        // offset in seconds GMT+1                                        // OBJETO DEL RTC
-WebSocketsServer webSocketConfig = WebSocketsServer(81); // OBJETO DEL SERVIDOR WEBSOCKET PARA LA CONFIGURACIÓN
-WebSocketsServer webSocketData = WebSocketsServer(82);   // OBJETO DEL SERVIDOR WEBSOCKET PARA LOS DATOS
-WebSocketsServer webSocketRelay = WebSocketsServer(83);  // OBJETO DEL SERVIDOR WEBSOCKET PARA LOS RELÉS
+ConfigManager config;                    // OBJETO DE LA CLASE ConfigManager
+WifiConfig wifiConfig;                   // OBJETO DE LA CLASE WifiConfig
+Pantalla displayLCD(LCD_ADDR, SDA, SCL); // OBJETO DE LA PANTALLA LCD                                   // OBJETO DEL SENSOR BMP280
+LogManager logSave;                      // OBJETO DE LA CLASE LogManager
+ESP32Time rtc(0);                        // offset in seconds GMT+1                                        // OBJETO DEL RTC
 Ticker tickerButton;
 Ticker ticker500ms;
 Ticker ticker1s;
+Ticker ticker1min;
 Ticker ticker5min;
 Ticker tickerSupervisor;
 
-AsyncWebServer server(80); // OBJETO DEL SERVIDOR HTTP
+AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
 
-#define INTERVALODELECTURA2MIN 240000 // INTERVALO DE ACTULIZACIÓN DE 2 MINUTOS
-#define INTERVALODELECTURA10SEG 10000 // INTERVALO DE ACTULIZACIÓN DE 10 SEGUNDOS
-#define INTERVALODELECTURA1SEG 1000   // INTERVALO DE ACTULIZACIÓN DE 1 SEGUNDO
-#define INTERVALODELECTURA05SEG 500   // INTERVALO DE ACTULIZACIÓN
-#define LED 25                        // PIN PARA EL LED
 // VARIABLES DE ENTRADA
 #define OK 35     // PIN PARA EL BOTÓN DE OK
 #define UP 12     // PIN PARA EL BOTÓN DE UP
@@ -39,18 +32,18 @@ AsyncWebServer server(80); // OBJETO DEL SERVIDOR HTTP
 #define RIGHT 14  // PIN PARA EL BOTÓN DE DERECHA
 #define BTN_K1 23 // PIN PARA EL BOTÓN DE K1
 #define BTN_K2 27 // PIN PARA EL BOTÓN DE K2
-// #define BTN_K3 36 // PIN PARA EL BOTÓN DE K3
-// #define BTN_K4 34 // PIN PARA EL BOTÓN DE K4
+
 #define RESET 33 // PIN PARA EL BOTÓN DE RESET
 #define D1 22    // PIN PARA EL BOTÓN DATA 1
 #define D2 26    // PIN PARA EL BOTÓN DATA 2
 #define D3 13    // PIN PARA EL BOTÓN DATA 3
 
 // VARIABLES DE SALIDA
-#define K1 21 // RELÉ K1
-#define K2 19 // RELÉ K2
-#define K3 18 // RELÉ K3
-#define K4 5  // RELÉ K4
+#define K1 21  // RELÉ K1
+#define K2 19  // RELÉ K2
+#define K3 18  // RELÉ K3
+#define K4 5   // RELÉ K4
+#define LED 25 // PIN PARA EL LED DE ESTADO
 
 // CREAR OBJETOS DE LA CLASE BOUNCE PARA CADA BOTÓN
 Bounce btnOk = Bounce();    // OK
@@ -60,8 +53,6 @@ Bounce btnLeft = Bounce();  // IZQUIERDA
 Bounce btnRight = Bounce(); // DERECHA
 Bounce btnK1 = Bounce();    // BOTÓN DE K1
 Bounce btnK2 = Bounce();    // BOTÓN DE K2
-// Bounce btnK3 = Bounce();    // BOTÓN DE K3
-// Bounce btnK4 = Bounce();    // BOTÓN DE K4
 Bounce btnReset = Bounce(); // BOTÓN DE RESET
 
 // ESTADOS DEL RIEGO
@@ -89,35 +80,45 @@ unsigned long timeOnDisplay = 0;
 bool displayState = true;
 int menuPage = 1; // PÁGINA DEL DISPLAY
 
-uint8_t clientData = 255; // Variable para rastrear el cliente conectado
-uint8_t clientConfig = 255;
-uint8_t clientRelay = 255;
-
-// NTP SERVER
-const char *ntpServer = "pool.ntp.org";
-const long gmtOffset_sec = 7200;
-const int daylightOffset_sec = 0;
 bool rtcConfig = false;
 
+// VARIABLES DE SEGUIMIENTO DE LOS TICKERS
 unsigned long ticker500msSupervisor = 0;
 unsigned long ticker1sSupervisor = 0;
+unsigned long ticker1minSupervisor = 0;
 unsigned long ticker5minSupervisor = 0;
 
-bool webSocketConfigStatus = false;
-bool webSocketDataStatus = false;
-bool webSocketRelayStatus = false;
+bool webSocketStatus = false;
 
 // SETUP DE LA APLICACIÓN PRINCIPAL
 void setup()
 {
   Serial.begin(115200);
+  // Deshabilitar el watchdog de hardware del núcleo 0
+  disableCore0WDT();
+
+  // Deshabilitar el watchdog de hardware del núcleo 1
+  disableCore1WDT();
+
+  // Deshabilitar el watchdog de software del bucle
+  disableLoopWDT();
   delay(1000);
-  // esp_task_wdt_init(10, true); // Inicializar el temporizador de vigilancia de la tarea
-  // esp_task_wdt_add(NULL);
+
   SPIFFS.begin();      // Inicializar el sistema de archivos SPIFFS
   config.loadConfig(); // Cargar la configuración al inicio
+  String DateTime = rtc.getTimeDate();
+  config.setLastReboot(DateTime);
   //***** CONFIGURACIÓN DE LA PANTALLA LCD
-  displayLCD.initDisplay();
+  bool lcdActive = displayLCD.initDisplay();
+  if (!lcdActive)
+  {
+    Serial.println("Error al iniciar la pantalla LCD");
+  }
+  else
+  {
+    Serial.println("Pantalla LCD iniciada");
+  }
+    
 
   //***** INICIALIZAR LA CONEXIÓN WIFI Y AP
   bool wifiActive = config.getWifiActive(); // Verificar si el WiFi está activado
@@ -125,28 +126,14 @@ void setup()
   initConnection(wifiActive, apActive);     // Inicializar la conexión WiFi y AP
 
   //***** CONFIGURAR EL CANAL WEBSOCKET PARA LA CONFIGURACIÓN
-  webSocketConfig.begin();
-  webSocketData.begin();
-  webSocketRelay.begin();
-
-  //***** CONFIGURAR LOS EVENTOS DEL WEBSOCKET
-  webSocketConfig.onEvent(webSocketEventConfig);
-  webSocketData.onEvent(webSocketEventData);
-  webSocketRelay.onEvent(webSocketEventRelay);
+  ws.onEvent(onEvent);
+  server.addHandler(&ws);
 
   //***** CONFIGURAR EL SERVIDOR HTTP
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(SPIFFS, "/index.html", "text/html"); });
   server.onNotFound([](AsyncWebServerRequest *request)
                     { request->send(SPIFFS, "/index.html", "text/html"); });
-
-  server.on("/logs", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-    if (SPIFFS.exists("/logs.json")) {
-      request->send(SPIFFS, "/logs.json", "application/json");
-    } else {
-      request->send(404, "application/json", "{\"error\":\"logs.json no encontrado\"}");
-    } });
   server.serveStatic("/", SPIFFS, "/");
 
   //***** INICIAR EL SERVIDOR HTTP
@@ -202,6 +189,7 @@ void setup()
   // Otros tickers para tareas periódicas
   ticker500ms.attach(0.5, task500ms);         // Se ejecuta cada 500 ms
   ticker1s.attach(1, task1s);                 // Se ejecuta cada 1 segundo
+  ticker1min.attach(60, task1min);            // Se ejecuta cada 1 minuto
   ticker5min.attach(300, task5min);           // Se ejecuta cada 5 minutos
   tickerSupervisor.attach(1, taskSupervisor); // Supervisor cada 1 segundo
   logSave.saveLog(rtc.getTimeDate(), "Sistema iniciado");
@@ -265,72 +253,129 @@ void LCD_ON() // ENCENDER LA PANTALLA
 }
 
 //***** FUNCIONES PARA EL WEB SERVER
-void webSocketEventData(uint8_t num, WStype_t type, uint8_t *payload, size_t length) // FUNCION PARA MANEJAR LOS EVENTOS DEL WEBSOCKET DE DATOS
+void handleWebSocketMessage(void *arg, uint8_t *data, size_t len, uint8_t num)
 {
-  if (type == WStype_CONNECTED)
+  AwsFrameInfo *info = (AwsFrameInfo *)arg;
+  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
   {
-    disconnectClient(clientData, webSocketData, "del servidor de datos");
-    clientData = num;
-    webSocketDataStatus = true;
-  }
-  else if (type == WStype_TEXT)
-  {
+    data[len] = 0;
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, (char *)data);
 
-    String message = String((char *)payload);
-    DynamicJsonDocument data(1024);
-    deserializeJson(data, message);
-    String action = data["action"];
-    Serial.print("Acción: ");
+    if (error)
+    {
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(error.f_str());
+      return;
+    }
+
+    String action = doc["action"];
+    Serial.print("Acción WebSocket recibida: ");
+    String relayName = doc["relay"];
     Serial.println(action);
-    if (action == "getConfig") // Enviar la configuracion al cliente
-    {                          //
-      setTimeRTC(data["hour"], data["minute"], data["second"], data["day"], data["month"], data["year"]);
+  
+
+    if (action == "GETCONFIG")
+    {
+      setTimeRTC(doc["hour"], doc["minute"], doc["second"], doc["day"], doc["month"], doc["year"]);
       updateClientConfig();
     }
-  }
-  else if (type == WStype_DISCONNECTED)
-  {
-
-    if (num == clientData)
+    else if (action == "GETNETWORKS")
     {
-      clientData = 255;
+      handleGetNetworks(num);
     }
-    webSocketDataStatus = false;
+    else if (action == "SETWIFICONFIG")
+    {
+      handleSetWifiConfig(num, doc);
+    }
+    else if (action == "SETAPCONFIG")
+    {
+      handleSetApConfig(num, doc);
+    }
+    else if (action == "RESET")
+    {
+      ESP.restart();
+    }
+    else if (action == "GETLOGS")
+    {
+      getLogs();
+    }
+    else if (action == "SETRELAYACTIVE" || action == "SETRELAYNAME")
+    {
+      handleSetRelayConfig(doc);
+    }
+    else if (action == "RELAYHANDLER")
+    {
+      String relay = doc["relay"];
+      int relayNumber = relay == "K1" ? K1 : K2;
+      
+      String command = doc["command"];
+      handleAction(relayNumber, relay, command, doc, relay == "K1" ? K1State : K2State);
+    }
+  }
+}
+
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
+             void *arg, uint8_t *data, size_t len)
+{
+  if (type == WS_EVT_CONNECT)
+  {
+    Serial.print("Cliente ");
+    Serial.print(client->id());
+    Serial.println(" conectado");
+    webSocketStatus = true;
+  }
+  else if (type == WS_EVT_DISCONNECT)
+  {
+    Serial.print("Cliente ");
+    Serial.print(client->id());
+    Serial.println(" desconectado");
+    webSocketStatus = false;
+  }
+  else if (type == WS_EVT_DATA)
+  {
+    handleWebSocketMessage(arg, data, len, client->id());
   }
 }
 
 void updateClientConfig() // ACTUALIZAR LA CONFIGURACIÓN DEL CLIENTE
 {
-  if (webSocketDataStatus)
+  if (webSocketStatus)
   {
+    StaticJsonDocument<1024> configDoc = config.getConfigDoc(); // Obtener el documento JSON de configuración
+    StaticJsonDocument<1280> jsonDocument;                      // Documento combinado, debe ser lo suficientemente grande para contener ambos JSON
+
+    // Añadir la acción y los datos de configuración al nuevo documento JSON
+    jsonDocument["action"] = "GETCONFIG";
+    jsonDocument["Data"] = configDoc.as<JsonVariant>(); // Inserta el JsonDocument dentro del nuevo JSON
+
     String configJson;
-    serializeJson(config.getConfigDoc(), configJson);
-    if (!webSocketData.broadcastTXT(configJson))
-    {
-      logSave.saveLog(rtc.getTimeDate(), "Error al enviar la configuración a través del WebSocket");
-    }
+    serializeJson(jsonDocument, configJson); // Serializar el JSON combinado a un String
+
+    ws.textAll(configJson); // Enviar a todos los clientes conectados
   }
 }
 
 void getLogs() // ACTUALIZAR LA CONFIGURACIÓN DEL CLIENTE
 {
-  if (webSocketConfigStatus)
+  if (webSocketStatus)
   {
+    StaticJsonDocument<2048> logDoc = logSave.getLogDoc(); // Obtener el documento JSON de los logs
+    StaticJsonDocument<1280> jsonDocument;                 // Documento combinado, debe ser lo suficientemente grande para contener ambos JSON
+
+    // Añadir la acción y los datos de los logs al nuevo documento JSON
+    jsonDocument["action"] = "GETLOGS";
+    jsonDocument["Data"] = logDoc.as<JsonVariant>(); // Inserta el JsonDocument dentro del nuevo JSON
+
     String logsJson;
-    serializeJson(logSave.getLogDoc(), logsJson);
-    if (!webSocketConfig.broadcastTXT(logsJson))
-    {
-      logSave.saveLog(rtc.getTimeDate(), "Error al enviar los logs a través del WebSocket");
-    }
+    serializeJson(jsonDocument, logsJson); // Serializar el JSON combinado a un String
+
+    ws.textAll(logsJson); // Enviar a todos los clientes conectados
   }
 }
 
 void sendRemainingTime() // ENVIAR EL TIEMPO RESTANTE
 {
-  if (webSocketRelayStatus)
-  {
-    if (K1State == ACTIVE || K2State == ACTIVE)
-    {
       StaticJsonDocument<100> jsonDocument;
       jsonDocument["action"] = "UPDATE_TIMER";
       jsonDocument["timeK1"] = remainingTime[0];
@@ -338,18 +383,12 @@ void sendRemainingTime() // ENVIAR EL TIEMPO RESTANTE
 
       char jsonString[100];
       serializeJson(jsonDocument, jsonString);
-      if (!webSocketRelay.broadcastTXT(jsonString))
-      {
-        // Error al enviar mensaje a través del WebSocket
-        logSave.saveLog(rtc.getTimeDate(), "Error al enviar mensaje a través del WebSocket en la función sendRemainingTime()");
-      }
-    }
-  }
+      ws.textAll(jsonString);
 }
 
 void sendTimerStatus(String relay, bool timerState) // ENVIAR EL ESTADO DEL TEMPORIZADOR
 {
-  if (webSocketRelayStatus)
+  if (webSocketStatus)
   {
     StaticJsonDocument<100> jsonDocument;
     jsonDocument["relay"] = relay;
@@ -357,184 +396,162 @@ void sendTimerStatus(String relay, bool timerState) // ENVIAR EL ESTADO DEL TEMP
     jsonDocument["status"] = timerState;
     char jsonString[100];
     serializeJson(jsonDocument, jsonString);
-    if (!webSocketRelay.broadcastTXT(jsonString))
-    {
-      // Error al enviar mensaje a través del WebSocket
-      logSave.saveLog(rtc.getTimeDate(), "Error al enviar mensaje a través del WebSocket en la función sendTimerStatus()");
-    }
+    ws.textAll(jsonString);
   }
 }
 
 void sendRelayStatus(String relay, String status) // ENVIAR EL ESTADO DEL RELÉ
 {
-  if (webSocketRelayStatus)
+  if (webSocketStatus)
   {
     StaticJsonDocument<100> jsonDocument;
+    jsonDocument["action"] = "UPDATE_RELAY_STATUS";
     jsonDocument["relay"] = relay;
-    jsonDocument["action"] = status;
+    jsonDocument["command"] = status;
     char jsonString[100];
     serializeJson(jsonDocument, jsonString);
-    if (!webSocketRelay.broadcastTXT(jsonString))
-    {
-      // Error al enviar mensaje a través del WebSocket
-      logSave.saveLog(rtc.getTimeDate(), "Error al enviar mensaje a través del WebSocket en la función sendRelayStatus()");
-    }
+    ws.textAll(jsonString);
   }
 }
 
-void disconnectClient(uint8_t num, WebSocketsServer &webSocket, String origin) // DESCONECTAR AL CLIENTE
+void sendMessage(String command, String message) // ENVIAR MENSAJE AL CLIENTE
 {
-  webSocket.disconnect(num);
+  if (webSocketStatus)
+  {
+    StaticJsonDocument<100> jsonDocument;
+    jsonDocument["action"] = 'MESSAGE';
+    jsonDocument["command"] = command;
+    jsonDocument["message"] = message;
+    char jsonString[100];
+    serializeJson(jsonDocument, jsonString);
+    ws.textAll(jsonString);
+  }
+  
 }
 
-void webSocketEventConfig(uint8_t num, WStype_t type, uint8_t *payload, size_t length) // FUNCION PARA MANEJAR LOS EVENTOS DEL WEBSOCKET DE CONFIGURACIÓN
+void handleGetNetworks(uint8_t num)
 {
-  if (type == WStype_CONNECTED)
+    wifiConfig.searchNetworks([num](const String &networksJson) {
+        // Enviar el resultado a través de WebSocket
+        ws.text(num, networksJson);
+        Serial.print("Redes WiFi encontradas: ");
+        Serial.println(networksJson);
+    });
+}
+
+void handleSetWifiConfig(uint8_t num, const JsonDocument &data)
+{
+  bool wifiActive = data["wifiActive"];
+  if (!wifiActive)
   {
-    disconnectClient(clientConfig, webSocketConfig, "configuración");
-    clientData = num;
-    webSocketConfigStatus = true;
+    // Desactivar WiFi
+    wifiConfig.disconnectWifi();
+    config.setWifiActive(false);
+    config.setWifiStatus(false);
+    config.setWifiSSID("");
+    config.setWifiPassword("");
+    config.setWifiIP("");
+    config.setWifiSubnet("");
+    config.setWifiGateway("");
+    displayLCD.clearWifi();
   }
-  else if (type == WStype_TEXT)
+  else
   {
-    String message = String((char *)payload);
-    DynamicJsonDocument data(1024);
-    deserializeJson(data, message);
-    String action = data["action"];
+    // Configurar WiFi
+    String ssid = data["ssid"];
+    String password = data["password"];
+    String ipConfig = data["ip"];
+    String subnetConfig = data["subnet"];
+    String gatewayConfig = data["gateway"];
 
-    //****CONFIGURACIÓN WIFI Y AP****//
-    if (action == "getNetworks") // Buscar redes WiFi
-    {
-      Serial.println("Buscando redes WiFi");
-      String networksJson = wifiConfig.searchNetworks();
-      webSocketConfig.sendTXT(num, networksJson);
-    }
-    else if (action == "setWifiConfig") // ACTIVAR O DESACTIVAR WIFI
-    {
-      bool wifiActive = data["wifiActive"];
-      if (!wifiActive)
-      {
-        config.setWifiActive(false);
-        config.setWifiStatus(false);
-        config.setWifiSSID("");
-        config.setWifiPassword("");
-        config.setWifiIP("");
-        config.setWifiSubnet("");
-        config.setWifiGateway("");
-        wifiConfig.disconnectWifi();
-      }
-      else
-      {
-        String ssid = data["ssid"];
-        String password = data["password"];
-        String ipConfig = data["ip"];
-        String subnetConfig = data["subnet"];
-        String gatewayConfig = data["gateway"];
+    IPAddress ip;
+    IPAddress subnet;
+    IPAddress gateway;
 
-        IPAddress ip;
-        IPAddress subnet;
-        IPAddress gateway;
-
-        if (!ip.fromString(ipConfig))
-        {
-          Serial.println("Error: IP address is not valid");
-        }
-        if (!subnet.fromString(subnetConfig))
-        {
-          Serial.println("Error: Subnet address is not valid");
-        }
-        if (!gateway.fromString(gatewayConfig))
-        {
-          Serial.println("Error: Gateway address is not valid");
-        }
-        bool wifiConnection = wifiConfig.initWifi(ssid.c_str(), password.c_str(), ip, gateway, subnet);
-        if (wifiConnection)
-        {
-          config.setWifiActive(true);
-          config.setWifiStatus(true);
-          config.setWifiSSID(ssid);
-          config.setWifiPassword(password);
-          config.setWifiIP(ip.toString());
-          config.setWifiSubnet(subnet.toString());
-          config.setWifiGateway(gateway.toString());
-          String message = "{ \"status\": \"true\", \"ip\": \"" + ip.toString() + "\", \"subnet\": \"" + subnet.toString() + "\", \"gateway\": \"" + gateway.toString() + "\" }";
-          webSocketConfig.sendTXT(num, message);
-        }
-        else
-        {
-          webSocketConfig.sendTXT(num, "false");
-          logSave.saveLog(rtc.getTimeDate(), "Error al conectar a la red WiFi");
-        }
-      }
-    }
-    else if (action == "setApConfig") // Configurar AP
+    if (!ip.fromString(ipConfig) || !subnet.fromString(subnetConfig) || !gateway.fromString(gatewayConfig))
     {
-      String active = data["active"];
-      if (active == "true")
-      {
-        String ssid = config.getApSSID();
-        String password = config.getApPassword();
-        wifiConfig.initAP(ssid.c_str(), password.c_str());
-        config.setApActive(true);
-        config.setApStatus(true);
-        IPAddress ip = wifiConfig.getAPIP();
-      }
-      else if (active == "false")
-      {
-        config.setApActive(false);
-        config.setApStatus(false);
-        wifiConfig.stopAP();
-      }
+      Serial.println("Error: Invalid network configuration");
+      ws.text(num, "false");
+      logSave.saveLog(rtc.getTimeDate(), "Error en la configuración de red");
+      return;
     }
-    else if (action == "Reset") // Restablecer la configuración
+    // wifiConfig.disconnectWifi();
+    bool saveWifiConfigData = saveWifiConfig(ssid.c_str(), password.c_str(), ip, gateway, subnet);
+    if (saveWifiConfigData)
     {
-      ESP.restart();
+      logSave.saveLog(rtc.getTimeDate(), "Configuración de red guardada");
+      sendMessage("SUCCESS", "Configuración de red guardada, reiniciando el dispositivo");
+      
     }
-    else if (action == "getLogs")
+    else
     {
-      getLogs();
-    }
-
-    //****CONFIGURACIÓN RELÉS****//
-    if (action == "setRelayActive") // Configurar relés
-    {
-      String relay = data["relay"];
-
-      if (relay == "K1")
-      {
-        bool K1Active = data["K1Active"];
-        config.setRelayActive("K1", K1Active);
-      }
-      else if (relay == "K2")
-      {
-        bool K2Active = data["K2Active"];
-        config.setRelayActive("K2", K2Active);
-      }
-    }
-    else if (action == "setRelayName")
-    {
-      String relay = data["relay"];
-      String relayName = data["relayName"];
-
-      config.setRelayName(relay, relayName);
+      sendMessage("ERROR", "Error al guardar la configuración de red");
+      logSave.saveLog(rtc.getTimeDate(), "Error al guardar la configuración de red");
     }
   }
+}
+bool saveWifiConfig(const String &ssid, const String &password, const IPAddress &ip, const IPAddress &gateway, const IPAddress &subnet)
+{
+      config.setWifiActive(true);
+      config.setWifiStatus(true);
+      config.setWifiSSID(ssid);
+      config.setWifiPassword(password);
+      config.setWifiIP(ip.toString());
+      config.setWifiSubnet(subnet.toString());
+      config.setWifiGateway(gateway.toString());
+      return true;
+}
 
-  else if (type == WStype_DISCONNECTED)
+void handleSetApConfig(uint8_t num, const JsonDocument &data)
+{
+  String active = data["active"];
+  if (active == "true")
   {
-    if (num == clientConfig)
-    {
-      clientConfig = 255;
-    }
-    webSocketConfigStatus = false;
+    // Activar AP
+    String ssid = config.getApSSID();
+    String password = config.getApPassword();
+    wifiConfig.initAP(ssid.c_str(), password.c_str());
+    config.setApActive(true);
+    config.setApStatus(true);
+    IPAddress ip = wifiConfig.getAPIP();
+    displayLCD.printAp();
+  }
+  else if (active == "false")
+  {
+    // Desactivar AP
+    config.setApActive(false);
+    config.setApStatus(false);
+    wifiConfig.stopAP();
+    displayLCD.clearAp();
   }
 }
 
-void handleAction(const int relayNumber, const String &relay, const String &action, const DynamicJsonDocument &data, RelayState &state)
+void handleSetRelayConfig(const JsonDocument &data)
 {
-  // Manejar la acción para el relé especificado
+  String relay = data["relay"];
+  String action = data["action"];
+  if (action == "SETRELAYACTIVE")
+  {
+    bool relayActive = data["KActive"];
+    config.setRelayActive(relay, relayActive);
+  }
+  else if (action == "SETRELAYNAME")
+  {
+    String relayName = data["relayName"];
+    config.setRelayName(relay, relayName);
+  }
+}
+
+void handleAction(const int relayNumber, const String &relay, const String &command, const JsonDocument &data, RelayState &state)
+{
+  Serial.print("Relé: ");
+  Serial.println(relay);
+
+  Serial.print("Comando: ");
+  Serial.println(command);
+
   int remainingNumber = relay == "K1" ? 0 : 1;
-  if (action == "SET_TIMER")
+  if (command == "SET_TIMER")
   {
     bool timerState = data["timerState"];
     unsigned long selectedTime = data["selectedTime"];
@@ -567,44 +584,38 @@ void handleAction(const int relayNumber, const String &relay, const String &acti
       setState(relay, WAITING);
     }
   }
-  else if (action == "ON")
+  else if (command == "ON")
+  {
+    relayOn(relayNumber, relay, state); // Corregido
+  }
+  else if (command == "ACTIVE")
   {
     relayStart(relayNumber, relay, state); // Corregido
-    sendRelayStatus(relay, "ON");
-  }
-  else if (action == "ACTIVE")
-  {
 
-    relayStart(relayNumber, relay, state); // Corregido
-    sendRelayStatus(relay, "ACTIVE");
   }
-  else if (action == "OFF")
+  else if (command == "OFF")
   {
     relayStop(relayNumber, relay, state); // Corregido
     setState(relay, INACTIVE);
-    sendRelayStatus(relay, "OFF");
   }
-  else if (action == "INACTIVE")
+  else if (command == "INACTIVE")
   {
 
-    relayInactive(relayNumber, relay, state); // Corregido
+    relayStop(relayNumber, relay, state); // Corregido
     remainingTime[remainingNumber] = config.getRelayTimerSelected(relay);
     config.setRelayRemainingTime(relay, remainingTime[remainingNumber]);
     LCD_UpdateTimer(relay);
     sendRemainingTime();
     setState(relay, INACTIVE);
-    sendRelayStatus(relay, "INACTIVE");
   }
-  else if (action == "PAUSE")
+  else if (command == "PAUSE")
   {
 
     relayPause(relayNumber, relay, state); // Corregido
-    sendRelayStatus(relay, "PAUSE");
   }
-  else if (action == "CONTINUE")
+  else if (command == "CONTINUE")
   {
     relayContinue(relayNumber, relay, state); // Corregido
-    sendRelayStatus(relay, "ACTIVE");
   }
 }
 
@@ -617,51 +628,6 @@ void setState(const String &relay, RelayState state)
   else if (relay == "K2")
   {
     K2State = state;
-  }
-}
-
-void webSocketEventRelay(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
-{
-  if (type == WStype_CONNECTED)
-  {
-    disconnectClient(clientRelay, webSocketRelay, "control de relés"); // Desconectar al segundo cliente intentando conectarse
-    clientRelay = num;
-    webSocketRelayStatus = true;
-  }
-  else if (type == WStype_TEXT)
-  {
-    String message = String((char *)payload);
-    DynamicJsonDocument data(1024);
-    if (deserializeJson(data, message) != DeserializationError::Ok)
-    {
-      Serial.println("Error al deserializar JSON");
-      return;
-    }
-    String relay = data["relay"];
-    int relayNumber = relay == "K1" ? K1 : K2;
-
-    String action = data["action"];
-
-    if (relay == "K1")
-    {
-      handleAction(relayNumber, relay, action, data, K1State);
-    }
-    else if (relay == "K2")
-    {
-      handleAction(relayNumber, relay, action, data, K2State);
-    }
-    else
-    {
-      Serial.println("Relé no válido");
-    }
-  }
-  else if (type == WStype_DISCONNECTED)
-  {
-    if (num == clientRelay)
-    {
-      clientRelay = 255; // Restablecer la variable para permitir una nueva conexión
-    }
-    webSocketRelayStatus = false;
   }
 }
 
@@ -684,36 +650,43 @@ void relayOn(int relayPin, String relay, RelayState &state) // ENCENDER EL RELÉ
   digitalWrite(relayPin, HIGH);
   state = ON;
   config.setRelayState(relay, "ON");
+  sendRelayStatus(relay, "ON");
 }
 void relayStart(int relayPin, String relay, RelayState &state) // ACTIVAR EL RELÉ
 {
+
   digitalWrite(relayPin, HIGH);
   state = ACTIVE;
   config.setRelayState(relay, "ACTIVE");
+  sendRelayStatus(relay, "ACTIVE");
 }
 void relayPause(int relayPin, String relay, RelayState &state) // PAUSAR EL RELÉ
 {
   digitalWrite(relayPin, LOW);
   state = PAUSE;
   config.setRelayState(relay, "PAUSE");
+  sendRelayStatus(relay, "PAUSE");
 }
 void relayContinue(int relayPin, String relay, RelayState &state) // CONTINUAR EL RELÉ DESPUÉS DE PAUSARLO
 {
   digitalWrite(relayPin, HIGH);
   state = ACTIVE;
   config.setRelayState(relay, "ACTIVE");
+  sendRelayStatus(relay, "ACTIVE");
 }
 void relayStop(int relayPin, String relay, RelayState &state) // APAGAR EL RELÉ
 {
   digitalWrite(relayPin, LOW);
   state = INACTIVE;
   config.setRelayState(relay, "INACTIVE");
+  sendRelayStatus(relay, "INACTIVE");
 }
 void relayInactive(int relayPin, String relay, RelayState &state) // APAGAR EL RELÉ
 {
   digitalWrite(relayPin, LOW);
   state = OFF;
   config.setRelayState(relay, "INACTIVE");
+  sendRelayStatus(relay, "INACTIVE");
 }
 void setManualTimer() // MOSTRAR PARPADEO
 {
@@ -758,9 +731,10 @@ void finallyRelayTimer(int relay, String relayNumber, RelayState &state, unsigne
 
 void updateTimeRelay() // ACTUALIZAR EL TIEMPO RESTANTE DEL RIEGO
 {
+
   if (K1State == ACTIVE || K2State == ACTIVE)
   {
-    sendRemainingTime();
+      sendRemainingTime();
   }
 
   if (K1State == ACTIVE) // ACTUALIZAR EL TIEMPO RESTANTE EN K1
@@ -788,9 +762,6 @@ void updateTimeRelay() // ACTUALIZAR EL TIEMPO RESTANTE DEL RIEGO
 //***** FUNCIONES DE LOOP
 void handleButtons() // MANEJAR LOS BOTONES
 {
-  webSocketConfig.loop();
-  webSocketData.loop();
-  webSocketRelay.loop();
   btnOk.update();
   btnUp.update();
   btnDown.update();
@@ -1019,10 +990,16 @@ void task500ms()
 
 void task1s()
 {
-  printLocalTime(); // ACTUALIZAR LA HORA
+  printLocalTime(); 
   getMemory();
   updateTimeRelay();
   ticker1sSupervisor = millis();
+  
+}
+
+void task1min()
+{
+  ticker1minSupervisor = millis();
 }
 
 void task5min()
@@ -1036,11 +1013,20 @@ void taskSupervisor()
 {
   unsigned long currentMillis = millis();
 
-  if (currentMillis - ticker500msSupervisor >= 1000)
+  if (currentMillis - ticker500msSupervisor >= 2000)
   {
     ticker500ms.detach();               // Detener el ticker de 500 ms
     ticker500ms.attach(0.5, task500ms); // Reiniciar el ticker de 500 ms
     logSave.saveLog(rtc.getTimeDate(), "Temporizador de 500 ms bloqueado. Reiniciando...");
+    ticker500msSupervisor = millis();
+  }
+
+  if (currentMillis - ticker1minSupervisor >= 120000)
+  {
+    ticker1min.detach();             // Detener el ticker de 1 minuto
+    ticker1min.attach(60, task1min); // Reiniciar el ticker de 1 minuto
+    logSave.saveLog(rtc.getTimeDate(), "Temporizador de 1 minuto bloqueado. Reiniciando...");
+    ticker1minSupervisor = millis();
   }
 
   if (currentMillis - ticker1sSupervisor >= 2000)
@@ -1048,12 +1034,8 @@ void taskSupervisor()
     ticker1s.detach();          // Detener el ticker de 1 segundo
     ticker1s.attach(1, task1s); // Reiniciar el ticker de 1 segundo
     logSave.saveLog(rtc.getTimeDate(), "Temporizador de 1 segundo bloqueado. Reiniciando...");
+    ticker1sSupervisor = millis();
   }
-}
-void loop()
-{
-  // esp_task_wdt_reset(); // Reiniciar el temporizador de vigilancia de la tarea
-  delay(10);
 }
 
 //***** FUNCIONES DEL SISTEMA
@@ -1221,4 +1203,10 @@ void getMemory() // OBTENER LA MEMORIA LIBRE
     String getDate = rtc.getTimeDate();
     logSave.saveLog(getDate, "Memoria RAM utilizada al " + String(useHeapPercent) + "%");
   }
+}
+
+//***** LOOP NO SE UTILIZA
+void loop()
+{
+  ws.cleanupClients(); // Limpiar los clientes desconectados
 }

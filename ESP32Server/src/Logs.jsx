@@ -1,29 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Button, Row, Col, Spinner } from 'react-bootstrap';
+import { Card, Table, Button, Row, Col, Spinner } from 'react-bootstrap';
+import { GrPowerReset } from "react-icons/gr";
 
 import { showErrorAlert, showSuccessAlert } from './alerts';
 
-const Log = () => {
+const Log = ({ webSocket, logs }) => {
 
-    const [data, setData] = useState(null);
-
+    const handleSerachLogs = () => {
+        if (webSocket) {
+            const message = { action: 'GETLOGS' };
+            webSocket.send(JSON.stringify(message));
+        }
+        else {
+            showErrorAlert('Error al reiniciar el dispositivo');
+        }
+    }
     useEffect(() => {
-        // Hacer una solicitud GET al archivo JSON
-        fetch('/Logs.json')
-            .then(response => {
-                // Verificar si la respuesta es exitosa
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json(); // Parsear la respuesta JSON
-            })
-            .then(data => {
-                setData(data); // Guardar los datos en el estado
-            })
-            .catch(error => {
-                console.error('Error fetching the JSON:', error);
-            });
-    }, []); // El array vacío [] asegura que este efecto se ejecute solo una vez
+        handleSerachLogs();
+    },[]
+    );
+
 
     return (
         <Row>
@@ -31,13 +27,32 @@ const Log = () => {
                 <Card className="mb-3">
                     <Card.Header className="d-flex flex-row justify-content-between align-items-center">
                         <h5 className="mb-0">LOGS</h5>
+                        <Button variant="primary" className='ms-1 me-2' style={{ width: 'calc(50% - 8px)' }} onClick={() => handleSerachLogs()}> <GrPowerReset className='me-2' /> Recargar</Button>
                     </Card.Header>
                     <Card.Body >
-                        {data ? (
-                            <pre>{JSON.stringify(data, null, 2)}</pre> // Mostrar los datos JSON en el componente
+                        {logs ? (
+                            <Table striped bordered hover>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Date</th>
+                                        <th>Error Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {logs.map((log, index) => (
+                                        <tr key={index}>
+                                            <td>{index + 1}</td>
+                                            <td>{log.date}</td>
+                                            <td>{log.error}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
                         ) : (
-                            <p>Loading...</p> // Mostrar un mensaje de carga mientras se obtiene el JSON
+                            <p>Loading...</p>
                         )}
+
                     </Card.Body>
                 </Card>
             </Col>

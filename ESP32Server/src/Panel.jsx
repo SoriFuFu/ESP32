@@ -4,131 +4,42 @@ import { MdTimer, MdTimerOff } from "react-icons/md";
 import { FaPlay, FaPause, FaPowerOff, FaStop } from 'react-icons/fa';
 import TimerModal from './TimerModal';
 
-const Panel = ({ Relay }) => {
-    const [webSocket, setWebSocket] = useState(null);
+const Panel = ({ webSocket, Relay, updateRelayApp }) => {
+    
     const [showModal, setShowModal] = useState(false);
     const [activeRelay, setActiveRelay] = useState(null);
-    const [relayStates, setRelayStates] = useState({
-        K1: Relay.K1,
-        K2: Relay.K2,
-    });
+
 
     useEffect(() => {
-        setRelayStates(prevState => ({
-            ...prevState,
-            K1: {
-                ...prevState.K1,
-                remainingTime: Relay.K1.active ? Relay.K1.remainingTime :  Relay.K1.timerSelected,
-            },
-            K2: {
-                ...prevState.K2,
-                remainingTime: Relay.K2.active ? Relay.K2.remainingTime :  Relay.K2.timerSelected,
-            },
-
-        }));
+        updateRelayApp('K1', "remainingTime", Relay.K1.active ? Relay.K1.remainingTime :  Relay.K1.timerSelected);
+        updateRelayApp('K2', "remainingTime", Relay.K2.active ? Relay.K2.remainingTime :  Relay.K2.timerSelected);
     }, []);
     
-
-    useEffect(() => {
-        // const ws = new WebSocket('ws://192.168.1.222:83');
-        // const ws = new WebSocket('ws://bubela.duckdns.org:83');
-        const ws = new WebSocket('ws://' + window.location.hostname + ':83');
-
-        setWebSocket(ws);
-
-        ws.onopen = () => {
-            console.log('Conexión WebSocket abierta');
-        };
-
-        ws.onerror = (error) => {
-            console.error('Error en WebSocket:', error);
-        };
-
-        ws.onclose = () => {
-            console.log('Conexión WebSocket cerrada');
-        };
-    }, []);
-
-    useEffect(() => {
-        if (webSocket) {
-            webSocket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.action === 'UPDATE_TIMER') {
-                    setRelayStates(prevState => ({
-                        ...prevState,
-                        K1: {
-                            ...prevState.K1,
-                            remainingTime: data.timeK1,
-                        },
-                        K2: {
-                            ...prevState.K2,
-                            remainingTime: data.timeK2,
-                        },
-                    }));
-                } else if (data.relay in Relay) {
-
-                    if (data.action === 'ON') {
-
-                        setRelayIsOn(data.relay, true);
-                        setRelayState(data.relay, 'ACTIVE');
-                    }else if(data.action === 'OFF') {
-                        setRelayIsOn(data.relay, false);
-                        setRelayState(data.relay, 'OFF');
-                    }else if(data.action === 'ACTIVE') {
-                        setRelayState(data.relay, 'ACTIVE');
-                    }else if(data.action === 'PAUSE') {
-                        setRelayState(data.relay, 'PAUSE');
-                    }else if(data.action === 'CONTINUE') {
-                        setRelayState(data.relay, 'ACTIVE');
-                    }else if(data.action === 'INACTIVE') {
-
-                        setRelayState(data.relay, 'INACTIVE');
-                    }
-                }
-            };
-        }
-    }, [webSocket]);
+    
     const setRelayIsOn = (relay, value) => {
-        setRelayStates(prevState => ({
-            ...prevState,
-            [relay]: {
-                ...prevState[relay],
-                isOn: value,
-            },
-        }));
+        updateRelayApp(relay, 'isOn', value);
     };
     const setRelayState = (relay, value) => {
- 
-        setRelayStates(prevState => ({
-            ...prevState,
-            [relay]: {
-                ...prevState[relay],
-                state: value,
-            },
-        }));
+        updateRelayApp(relay, 'state', value);
     };
 
     const setRelayTimerState = (relay, value) => {
-        setRelayStates(prevState => ({
-            ...prevState,
-            [relay]: {
-                ...prevState[relay],
-                timerState: value,
-            },
-        }));
+        updateRelayApp(relay, 'timerState', value);
     };
 
-    const handleRelayAction = (relay, action) => {
+    const handleRelayAction = (relay, command) => {
 
         if (relay in Relay) {
-            if (action === 'ON') {
+            if (command === 'ON') {
                 setRelayIsOn(relay, true);
-            } else if (action === 'OFF') {
+            } else if (command === 'OFF') {
                 setRelayIsOn(relay, false);
+            }else if (command === 'INACTIVE') {
+                setRelayState(relay, 'INACTIVE');
             }
 
             if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-                const message = { relay: relay, action: action };
+                const message = { action: "RELAYHANDLER", relay: relay, command: command };
                 webSocket.send(JSON.stringify(message));
             } else {
                 console.log('WebSocket no está completamente abierto');
@@ -141,23 +52,21 @@ const Panel = ({ Relay }) => {
     const hundleRelayTimer = (relay) => {
         console.log(relay);
         if (relay in Relay) {
-    
-            let action;
-            const relayData = relayStates[relay];
-            console.log(relayData.state);
+            let command;
+            const relayData = Relay[relay];
             if (relayData.state === 'ACTIVE') {
-                setRelayState(relay, 'PAUSE'); // Actualizar el estado local del relé antes de enviar el mensaje WebSocket
-                action = 'PAUSE';
+                // setRelayState(relay, 'PAUSE'); // Actualizar el estado local del relé antes de enviar el mensaje WebSocket
+                command = 'PAUSE';
             } else if (relayData.state === 'PAUSE') {
-                setRelayState(relay, 'ACTIVE'); // Actualizar el estado local del relé antes de enviar el mensaje WebSocket
-                action = 'CONTINUE';
+                // setRelayState(relay, 'ACTIVE'); // Actualizar el estado local del relé antes de enviar el mensaje WebSocket
+                command = 'CONTINUE';
             } else if (relayData.state === 'INACTIVE') {
-                action = 'ACTIVE';
-                setRelayState(relay, 'ACTIVE'); // Actualizar el estado local del relé antes de enviar el mensaje WebSocket
+                command = 'ACTIVE';
+                // setRelayState(relay, 'ACTIVE'); // Actualizar el estado local del relé antes de enviar el mensaje WebSocket
             }
     
             if (webSocket) {
-                const message = { relay: relay, action: action, selectedTime: relayData.remainingTime };
+                const message = {action: "RELAYHANDLER", relay: relay, command: command, selectedTime: relayData.remainingTime };
                 webSocket.send(JSON.stringify(message));
             } else {
                 console.log('WebSocket no está inicializado');
@@ -172,7 +81,7 @@ const Panel = ({ Relay }) => {
         console.log(relay, value);
         if (relay in Relay) {
             if (webSocket) {
-                const message = { relay: relay, action: 'SET_TIMER', timerState: false };
+                const message = {action: "relayHandler", relay: relay, commad: 'SET_TIMER', timerState: false };
                 webSocket.send(JSON.stringify(message));
             } else {
                 console.log('WebSocket no está inicializado');
@@ -194,18 +103,12 @@ const Panel = ({ Relay }) => {
 
     // FUNCION PARA SELECCIONAR EL TIEMPO
     const handleTimeSelection = (relay, selectedTime) => {
-        setRelayStates(prevState => ({
-            ...prevState,
-            [relay]: {
-                ...prevState[relay],
-                timerState: true,
-                remainingTime: selectedTime
-            }
-        }));
+        updateRelayApp(relay, 'timerState', true);
+        updateRelayApp(relay, 'remainingTime', selectedTime);
 
         if (webSocket && webSocket.readyState === WebSocket.OPEN) {
             setShowModal(false);
-            const message = { relay: relay, action: 'SET_TIMER', timerState: true, selectedTime: selectedTime };
+            const message = {action: "RELAYHANDLER", relay: relay, command: 'SET_TIMER', timerState: true, selectedTime: selectedTime };
             webSocket.send(JSON.stringify(message));
         } else {
             console.log('WebSocket no está inicializado');
@@ -226,17 +129,17 @@ const Panel = ({ Relay }) => {
             </Row>
             <Container>
                 <Row>
-                    {Object.keys(relayStates).map((relay) => (
+                    {Object.keys(Relay).map((relay) => (
                         <Col md={6} key={relay}>
-                            {relayStates[relay].active && (
+                            {Relay[relay].active && (
                                 <Card className="mb-3">
                                     <Card.Body>
                                         <div className="d-flex justify-content-between align-items-center mb-3">
-                                            <Card.Title>{relayStates[relay].name}</Card.Title>
-                                            {!relayStates[relay].timerState && (
+                                            <Card.Title>{Relay[relay].name}</Card.Title>
+                                            {!Relay[relay].timerState && (
                                                 <Button
-                                                    variant={relayStates[relay].isOn ? 'success' : 'danger'}
-                                                    onClick={() => handleRelayAction(relay, relayStates[relay].isOn ? 'OFF' : 'ON')}
+                                                    variant={Relay[relay].isOn ? 'success' : 'danger'}
+                                                    onClick={() => handleRelayAction(relay, Relay[relay].isOn ? 'OFF' : 'ON')}
                                                     className='d-flex justify-content-center align-items-center rounded-circle'
                                                     style={{ width: '40px', height: '40px' }}
                                                 >
@@ -251,18 +154,18 @@ const Panel = ({ Relay }) => {
                                                         {Relay[relay].timerState ? <MdTimer /> : <MdTimerOff />}
                                                     </Button>
                                                 </Col>
-                                                {relayStates[relay].timerState ? (
+                                                {Relay[relay].timerState ? (
                                                     <>
                                                         <Col xs={6} md={6} className="text-center fs-3">
                                                             <div className="mx-3">
-                                                                <span>{`${Math.floor(relayStates[relay].remainingTime / 3600000).toString().padStart(2, '0')}:${Math.floor((relayStates[relay].remainingTime % 3600000) / 60000).toString().padStart(2, '0')}:${Math.floor((relayStates[relay].remainingTime % 60000) / 1000).toString().padStart(2, '0')}`}</span>
+                                                                <span>{`${Math.floor(Relay[relay].remainingTime / 3600000).toString().padStart(2, '0')}:${Math.floor((Relay[relay].remainingTime % 3600000) / 60000).toString().padStart(2, '0')}:${Math.floor((Relay[relay].remainingTime % 60000) / 1000).toString().padStart(2, '0')}`}</span>
                                                             </div>
                                                         </Col>
                                                         <Col xs={4} md={3} className="d-flex justify-content-right">
                                                             <Button variant="success" onClick={() => hundleRelayTimer(relay)}>
-                                                                {renderIcon(relayStates[relay])}
+                                                                {renderIcon(Relay[relay])}
                                                             </Button>
-                                                            {relayStates[relay].state === 'ACTIVE' && (
+                                                            {Relay[relay].state === 'ACTIVE' && (
                                                                 <Button variant="danger" onClick={() => handleRelayAction(relay, 'INACTIVE')} className='d-flex justify-content-center align-items-center ms-2' style={{ width: '40px', height: '40px' }}>
                                                                     <FaStop />
                                                                 </Button>

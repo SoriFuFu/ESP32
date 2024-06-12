@@ -8,7 +8,7 @@ const  Reset = ({webSocket}) => {
 
 const handleReset = () => {
     if (webSocket) {
-        const message = { action: 'Reset' };
+        const message = { action: 'RESET' };
         webSocket.send(JSON.stringify(message));
         showSuccessAlert('Dispositivo reiniciado');
     }

@@ -11,38 +11,68 @@ import Config from './Config';
 const App = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [wifiConfig, setWifiConfig] = useState({});
-    const [wifiStatus, setWifiStatus] = useState(false);
-    const [apStatus, setApStatus] = useState(false);
     const [apConfig, setApConfig] = useState({});
-    const [relay, setRelay] = useState({});
+    const [relayConfig, setRelayConfig] = useState({});
+    const [deviceInfo, setDeviceInfo] = useState({});
+    const [logs, setLogs] = useState([]);
+    const [wifiNetworks, setWifiNetworks] = useState([]);
+    const [webSocket, setWebSocket] = useState(null);
 
     const handleGetConfig = () => {
-        // const ws = new WebSocket('ws://192.168.1.222:82');
-        // const ws = new WebSocket('ws://bubela.duckdns.org:82');
-        const ws = new WebSocket('ws://' + window.location.hostname + ':82');
 
+        // const ws = new WebSocket('ws://bubela.duckdns.org/ws');
+        const ws = new WebSocket('ws://' + window.location.hostname + '/ws');
+
+
+        setWebSocket(ws);
         ws.onopen = () => {
             const now = new Date();
-            const hour = now.getHours() ;
-            const minute = now.getMinutes() ;
-            const seconds = now.getSeconds() ;
-            const day = now.getDay();
-            const month = now.getMonth();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const seconds = now.getSeconds();
+            const day = now.getDate(); // Cambiado de getDay() a getDate()
+            const month = now.getMonth() + 1; // getMonth() devuelve de 0 a 11, sumamos 1
             const year = now.getFullYear();
-
-            let message = { action: 'getConfig', hour: hour, minute: minute, seconds: seconds, day: day, month: month, year: year};
+            let message = { action: 'GETCONFIG', hour: hour, minute: minute, seconds: seconds, day: day, month: month, year: year };
             ws.send(JSON.stringify(message));
         };
+        
         ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            setWifiConfig(data.Wifi);
-            setWifiStatus(data.Wifi.status);
-            setApStatus(data.AP.status);
-            setApConfig(data.AP);
-            setRelay(data.Relay);
-            setIsLoading(false);
+            const message = JSON.parse(event.data);
+            const data = message.Data;
+            const action = message.action;
+            if (action === 'GETLOGS') {
+                setLogs(data.logs);
+                return;
+            } else if (action === 'GETCONFIG') {
+                setWifiConfig(data.Wifi);
+                setApConfig(data.AP);
+                setRelayConfig(data.Relay);
+                setDeviceInfo(data.Device);
+                setIsLoading(false);
+            } else if (action === 'GETNETWORKS') {
+                setWifiNetworks(message.networks);
+             
+            }else if (action === 'UPDATE_TIMER') {
+                let K1Time = message.timeK1;
+                let K2Time = message.timeK2;
+                updateRelayApp('K1', "remainingTime", K1Time);
+                updateRelayApp('K2', "remainingTime", K2Time);
 
-            ws.close(); // Cerrar la conexión después de recibir el mensaje
+
+
+            }else if (action === 'UPDATE_RELAY_STATUS') {
+                let relayName = message.relay;
+                let relayStatus = message.command;
+                updateRelayApp(relayName, "state", relayStatus);
+        
+            }else if (action === 'MESSAGE') {
+                if (message.command === 'SUCCESS') {
+                    showSuccessAlert(message.message);
+                } else if (message.command === 'ERROR') {
+                    showErrorAlert(message.message);
+                }
+            }
         };
 
         ws.onerror = (error) => {
@@ -50,7 +80,7 @@ const App = () => {
         };
 
         ws.onclose = () => {
-            console.log('Conexión WebSocket cerrada');
+            console.log('Conexión WebSocket Data cerrada');
         };
     };
 
@@ -59,45 +89,29 @@ const App = () => {
     }, []);
 
 
-    const hundleSetWifiStatus = (status) => {
-        setWifiStatus(status);
-        console.log('hundleSetWifiStatus', status);
+    const updateWifiConfigApp= (object, data) => {
+        setWifiConfig(prevConfig => ({
+            ...prevConfig,
+            [object]: data
+        }));
     };
-    const hundleSetApStatus = (status) => {
-        setApStatus(status);
-        console.log('hundleSetApStatus', status);
-    };
-    const updateRelayApp = (relayName, statusOrName) => {
-        if (typeof statusOrName === 'boolean') {
-            // Actualizar estado del relé
-            setRelay(prevConfig => ({
-                ...prevConfig,
-                [relayName]: {
-                    ...prevConfig[relayName],
-                    active: statusOrName
-                }
-            }));
-        } else {
-            // Actualizar nombre del relé
-            setRelay(prevConfig => ({
-                ...prevConfig,
-                [relayName]: {
-                    ...prevConfig[relayName],
-                    name: statusOrName
-                }
-            }));
-        }
+    const updateApConfigApp = (object, data) => {
+        setApConfig(prevConfig => ({
+            ...prevConfig,
+            [object]: data
+        }));
     };
 
-
-
-    const hundleSetEnable = (relay, status) => {
-        updateRelayApp(relay, status);
+    const updateRelayApp = (relayName, object, data) => {
+        setRelayConfig(prevConfig => ({
+            ...prevConfig,
+            [relayName]: {
+                ...prevConfig[relayName],
+                [object]: data
+            }
+        }));
     }
 
-    const hundleSetName = (relay, name) => {
-        updateRelayApp(relay, name);
-    }
 
 
     return (
@@ -112,11 +126,11 @@ const App = () => {
                     </div>
                 ) : (
                     <>
-                        <Menu wifiStatus={wifiStatus} apStatus={apStatus} />
+                        <Menu wifiStatus={wifiConfig.status} apStatus={apConfig.status} />
                         <Container fluid className="content">
                             <Routes>
-                                <Route path="/panel" element={<Panel Relay={relay} />} />
-                                <Route path="/config/*" element={<Config wifiConfig={wifiConfig} apConfig={apConfig} relay={relay} setWifiStatusApp={hundleSetWifiStatus} SetApStatusApp={hundleSetApStatus} setEnableApp={hundleSetEnable} setNameApp={hundleSetName} />} />
+                                <Route path="/panel" element={<Panel webSocket={webSocket} Relay={relayConfig} updateRelayApp={updateRelayApp} />} />
+                                <Route path="/config/*" element={<Config webSocket={webSocket} deviceInfo={deviceInfo} wifiConfig={wifiConfig} wifiNetworks={wifiNetworks} apConfig={apConfig} relayConfig={relayConfig} logs={logs} updateWifiConfigApp={updateWifiConfigApp}  updateApConfigApp={updateApConfigApp} updateRelayApp={updateRelayApp} />} />
 
                                 <Route path="*" element={<Navigate to="/panel" replace />} />
                             </Routes>

@@ -4,38 +4,27 @@ import { BsSearchHeart, BsEye, BsEyeSlash } from "react-icons/bs";
 import { FaUpload } from "react-icons/fa";
 import { showErrorAlert, showSuccessAlert } from './alerts';
 
-const WifiConfigComponent = ({ wifiConfig, apStatus, setWifiStatusConfig, webSocket }) => {
+
+const WifiConfigComponent = ({ wifiConfig, wifiNetworks, apStatus, updateWifiConfig, webSocket }) => {
 
     // ESTADOS PARA LA CONEXIÓN DE RED
     const [isLoadingSearchNetworks, setIsLoadingSearchNetworks] = useState(false); // Estado para mostrar el spinner de búsqueda de redes
     const [isLoadingSetWifiConfig, setIsLoadingSetWifiConfig] = useState(false);   // Estado para mostrar el spinner de configuración de WiFi
-    // ESTADOS PARA LA CONFIGURACIÓN DE LA RED WIFI
-    const [wifiEnabled, setWifiEnabled] = useState(wifiConfig.status);             // Estado para el estado de la conexión WiFi
-    const [wifiStatus, setWifiStatus] = useState(wifiConfig.status);               // Estado para el estado de la conexión WiFi
-    const [wifiSSID, setWifiSSID] = useState(wifiConfig.ssid);                     // Estado para el SSID de la red WiFi
-    const [wifiPassword, setWifiPassword] = useState(wifiConfig.password);         // Estado para la contraseña de la red WiFi
-    const [showWifiPassword, setShowWifiPassword] = useState(false);               // Estado para mostrar u ocultar la contraseña del WiFi
-    // ESTADOS PARA LA BÚSQUEDA DE REDES
-    const [networks, setNetworks] = useState([]);                                  // Estado para almacenar las redes disponibles
-    const [selectedNetwork, setSelectedNetwork] = useState('');                    // Estado para almacenar la red seleccionada
-    //ESTADOS PARA LA CONFIGURACIÓN DE IP ESTÁTICA
-    const [staticIPEnabled, setStaticIPEnabled] = useState(wifiConfig.staticIp);   // Estado para habilitar la configuración de IP estática
-    const [staticWifiIP, setStaticWifiIP] = useState(wifiConfig.ip);               // Estado para la dirección IP estática
-    const [staticSubnetMask, setStaticSubnetMask] = useState(wifiConfig.subnet);   // Estado para la máscara de subred estática
-    const [staticGateway, setStaticGateway] = useState(wifiConfig.gateway);        // Estado para la puerta de enlace estática
+    const [showWifiPassword, setShowWifiPassword] = useState(false);               // Estado para mostrar la contraseña de la red WiFi
+    const [selectedNetwork, setSelectedNetwork] = useState(wifiConfig.ssid);      // Estado para almacenar la red WiFi seleccionada      
 
+    useEffect(() => {
+        if (wifiNetworks.length >= 0) {
+            setIsLoadingSearchNetworks(false);
+        }
+    }, [wifiNetworks]);
 
-    // OBTENER LAS REDES DISPONIBLES
+    // OBTENER LAS REDES DISPONIBLES 
     const handleGetNetworks = () => {
         if (webSocket) {
             setIsLoadingSearchNetworks(true);
-            let message = { action: 'getNetworks' };
+            let message = { action: 'GETNETWORKS' };
             webSocket.send(JSON.stringify(message));
-            webSocket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                setNetworks(data.networks);
-                setIsLoadingSearchNetworks(false);
-            };
         } else {
             console.log('WebSocket no está inicializado');
         }
@@ -43,71 +32,42 @@ const WifiConfigComponent = ({ wifiConfig, apStatus, setWifiStatusConfig, webSoc
     //CONFIGURAR WIFI
     const setConfigWifi = () => {
         setIsLoadingSetWifiConfig(true);
-        if (selectedNetwork === '' || wifiPassword === '' || staticWifiIP === '' || staticSubnetMask === '' || staticGateway === '') {
+        if (selectedNetwork === '' || wifiConfig.password === '' || wifiConfig.ip === '' || wifiConfig.subnet === '' || wifiConfig.gateway === '') {
             showErrorAlert('Debes llenar todos los campos');
             setIsLoadingSetWifiConfig(false);
             return;
         }
         if (webSocket) {
-            let message = { action: 'setWifiConfig', wifiActive: true, ssid: selectedNetwork, password: wifiPassword, ip: staticWifiIP, subnet: staticSubnetMask, gateway: staticGateway };
+            let message = { action: 'SETWIFICONFIG', wifiActive: true, ssid: selectedNetwork, password: wifiConfig.password, ip: wifiConfig.ip, subnet: wifiConfig.subnet, gateway: wifiConfig.gateway };
             webSocket.send(JSON.stringify(message));
-            webSocket.onmessage = (event) => {
-                const data = event.data;
-                const dataJson = JSON.parse(data);
-                const status = dataJson.status;
-                if (status === 'true') {
-                    const IP = dataJson.ip;
-                    const Subnet = dataJson.subnet;
-                    const Gateway = dataJson.gateway;
-                    setWifiSSID(selectedNetwork);
-                    setStaticWifiIP(IP);
-                    setStaticSubnetMask(Subnet);
-                    setStaticGateway(Gateway);
-                    showSuccessAlert('Conectado correctamente');
-                    setWifiStatus(true);
-                    setWifiStatusConfig(true);
-                    setIsLoadingSetWifiConfig(false);
-                } else if (status === 'false') {
-                    showErrorAlert('Error al conectar');
-                    setWifiStatus(false);
-                    setWifiSSID('');
-                    setWifiPassword('');
-                    setIsLoadingSetWifiConfig(false);
-
-                }
-            };
-
-
+            updateWifiConfig("active", true);
+            updateWifiConfig("status", true);
+            updateWifiConfig("ssid", selectedNetwork);
         } else {
             console.log('WebSocket no está inicializado');
         }
     };
     //ACTIVAR O DESACTIVAR LA RED WIFI
     const handleWifiEnabledChange = (checked) => {
-        setWifiEnabled(checked);
-
         if (apStatus && !checked) {
-            handleWifiEnabled(checked);
+            updateWifiConfig("active", false);
+            updateWifiConfig("status", false);
+            updateWifiConfig("ssid", '');
+            updateWifiConfig("password", '');
+            updateWifiConfig("ip", '');
+            updateWifiConfig("subnet", '');
+            updateWifiConfig("gateway", '');
+            handleWifiEnabled(false);
         } else if (!apStatus && !checked) {
             showErrorAlert('No puedes desactivar la red WiFi sin activar el modo AP');
-            setWifiEnabled(true);
         }
     };
-
     const handleWifiEnabled = (enabled) => {
         switch (enabled) {
             case false:
                 if (webSocket) {
                     let message = { action: 'setWifiConfig', wifiActive: false };
-                    setWifiSSID('');
-                    setWifiPassword('');
-                    setStaticWifiIP('');
-                    setStaticSubnetMask('');
-                    setStaticGateway('');
                     webSocket.send(JSON.stringify(message));
-                    setWifiStatus(false);
-                    setWifiEnabled(false);
-                    setWifiStatusConfig(false);
                 } else {
                     console.log('WebSocket no está inicializado');
                 }
@@ -147,20 +107,36 @@ const WifiConfigComponent = ({ wifiConfig, apStatus, setWifiStatusConfig, webSoc
     const handleStaticWifiIPChange = (e) => {
         const inputValue = e.target.value.replace(/[^\d.]/g, ''); // Eliminar caracteres que no sean dígitos o puntos
         const formattedValue = format(inputValue);
-        setStaticWifiIP(formattedValue);
+        updateWifiConfig("ip", formattedValue);
     };
 
     const handleStaticSubnetMaskChange = (e) => {
         const inputValue = e.target.value.replace(/[^\d.]/g, ''); // Eliminar caracteres que no sean dígitos o puntos
         const formattedValue = format(inputValue);
-        setStaticSubnetMask(formattedValue);
+        updateWifiConfig("subnet", formattedValue);
     }
 
     const handleStaticGatewayChange = (e) => {
         const inputValue = e.target.value.replace(/[^\d.]/g, ''); // Eliminar caracteres que no sean dígitos o puntos
         const formattedValue = format(inputValue);
-        setStaticGateway(formattedValue);
+        updateWifiConfig("gateway", formattedValue);
     }
+    const calculateSignalStrength = (rssi) => {
+        // El rango típico de RSSI va de -100 a 0 dBm
+        // Suponiendo que -100 dBm es la señal más débil y 0 dBm es la señal más fuerte
+        // Podríamos escalar el valor de RSSI a un porcentaje de 0 a 100
+        // Por ejemplo, si RSSI es -100, el porcentaje sería 0, y si RSSI es 0, el porcentaje sería 100
+    
+        // Limitamos el rango de RSSI entre -100 y 0
+        const boundedRSSI = Math.min(0, Math.max(-100, rssi));
+    
+        // Escalamos el valor de RSSI al rango de 0 a 100
+        const percentage = 100 * ((boundedRSSI + 100) / 100);
+    
+        // Redondeamos el porcentaje al número entero más cercano
+        return Math.round(percentage);
+    };
+    
     return (
 
         <Row>
@@ -170,20 +146,25 @@ const WifiConfigComponent = ({ wifiConfig, apStatus, setWifiStatusConfig, webSoc
                         <h5 className="mb-0">Configuración WiFi</h5>
                         <Form.Switch
                             className="float-end"
-                            checked={wifiEnabled}
+                            checked={wifiConfig.active}
                             onChange={(e) => handleWifiEnabledChange(e.target.checked)}
                         />
                     </Card.Header>
-                    <Card.Body hidden={!wifiEnabled}>
+                    <Card.Body hidden={!wifiConfig.active}>
                         <Form.Group as={Row} className="mb-3">
                             <Form.Label column sm={3}>Red WiFi:</Form.Label>
                             <div className="d-flex flex-row align-items-center">
-                                <Form.Select value={selectedNetwork} onChange={(e) => setSelectedNetwork(e.target.value)} >
-                                    <option value={wifiSSID}>{wifiSSID !== '' ? wifiSSID : 'Selecciona una red'}</option>
-
-                                    {networks.map((network, index) => (
-                                        <option key={index} value={network}>{network}</option>
-                                    ))}
+                                <Form.Select value={selectedNetwork} onChange={(e) => setSelectedNetwork(e.target.value)}>
+                                    <option value="">{selectedNetwork !== '' ? selectedNetwork : 'Selecciona una red'}</option>
+                                    {wifiNetworks.length > 0 ? (
+                                        wifiNetworks.map((network, index) => (
+                                            <option key={index} value={network.ssid}>
+                                                {`${network.ssid} (${calculateSignalStrength(network.rssi)}%) `}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option disabled>No se encontraron redes WiFi</option>
+                                    )}
                                 </Form.Select>
                                 <Button onClick={handleGetNetworks} className="ms-2">
                                     {isLoadingSearchNetworks ?
@@ -199,23 +180,23 @@ const WifiConfigComponent = ({ wifiConfig, apStatus, setWifiStatusConfig, webSoc
                         <Form.Group className="mb-3">
                             <Form.Label >Contraseña:</Form.Label>
                             <div className="d-flex flex-row align-items-center">
-                                <Form.Control type={showWifiPassword ? "text" : "password"} value={wifiPassword} onChange={(e) => setWifiPassword(e.target.value)} />
+                                <Form.Control type={showWifiPassword ? "text" : "password"} value={wifiConfig.password} onChange={(e) => updateWifiConfig("password", e.target.value)} />
                                 <Button className="ms-2" onClick={() => setShowWifiPassword(!showWifiPassword)}>{showWifiPassword ? <BsEyeSlash /> : <BsEye />}</Button>
                             </div>
                         </Form.Group>
 
                     </Card.Body>
-                    <Card.Header className={`d-flex flex-row justify-content-between align-items-center ${!wifiEnabled && 'd-none'}`}>
+                    <Card.Header className={`d-flex flex-row justify-content-between align-items-center `}>
                         <h5 className="mb-0">IP Estática:</h5>
                     </Card.Header>
 
-                    <Card.Body hidden={!wifiEnabled} >
+                    <Card.Body hidden={!wifiConfig.active} >
 
                         <Form.Group className="mb-3">
                             <Form.Label >Dirección IP:</Form.Label>
                             <Form.Control
                                 type="text"
-                                value={staticWifiIP}
+                                value={wifiConfig.ip}
                                 onChange={handleStaticWifiIPChange}
                                 required
                             />
@@ -224,7 +205,7 @@ const WifiConfigComponent = ({ wifiConfig, apStatus, setWifiStatusConfig, webSoc
                             <Form.Label >Máscara de Subred:</Form.Label>
                             <Form.Control
                                 type="text"
-                                value={staticSubnetMask}
+                                value={wifiConfig.subnet}
                                 onChange={handleStaticSubnetMaskChange}
                                 required
                             />
@@ -233,7 +214,7 @@ const WifiConfigComponent = ({ wifiConfig, apStatus, setWifiStatusConfig, webSoc
                             <Form.Label >Puerta de Enlace:</Form.Label>
                             <Form.Control
                                 type="text"
-                                value={staticGateway}
+                                value={wifiConfig.gateway}
                                 onChange={handleStaticGatewayChange}
                                 required
                             />
