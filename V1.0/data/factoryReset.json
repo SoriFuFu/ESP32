@@ -1,0 +1,44 @@
+{
+    "Device": {
+        "name": "BaBuIoT",
+        "version": "1.0.0",
+        "status": "ACTIVE",
+        "lastUpdate": "2021-09-01 12:00:00"
+    },
+    "Wifi": {
+        "active": false,
+        "status": false,
+        "ssid": "",
+        "password": "",
+        "ip": "",
+        "subnet": "",
+        "gateway": "",
+        "mac": ""
+    },
+    "AP": {
+        "active": true,
+        "status": true,
+        "ssid": "BaBuIoT",
+        "password": "12345678"
+    },
+    "Relay": {
+        "K1": {
+            "active": true,
+            "timerState": false,
+            "isOn": false,
+            "name": "Dispositivo1",
+            "state": "INACTIVE",
+            "timerSelected": 0,
+            "remainingTime": 0
+        },
+        "K2": {
+            "active": true,
+            "timerState": false,
+            "isOn": false,
+            "name": "Dispositivo2",
+            "state": "INACTIVE",
+            "timerSelected": 0,
+            "remainingTime": 0
+        }
+    }
+}

@@ -2,7 +2,7 @@
  
 void setup() {
   // Inicializa la comunicación I2C con los pines 2 (SCL) y 4 (SDA)
-  Wire.begin(4, 2);
+  Wire.begin(21, 22);
   Serial.begin(115200);
   Serial.println("\nI2C Scanner");
 }
