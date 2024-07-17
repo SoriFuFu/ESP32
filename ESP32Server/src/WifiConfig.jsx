@@ -50,6 +50,7 @@ const WifiConfigComponent = ({ wifiConfig, wifiNetworks, apStatus, updateWifiCon
     //ACTIVAR O DESACTIVAR LA RED WIFI
     const handleWifiEnabledChange = (checked) => {
         if (apStatus && !checked) {
+            if (wifiConfig.ssid !== '') {
             updateWifiConfig("active", false);
             updateWifiConfig("status", false);
             updateWifiConfig("ssid", '');
@@ -58,15 +59,22 @@ const WifiConfigComponent = ({ wifiConfig, wifiNetworks, apStatus, updateWifiCon
             updateWifiConfig("subnet", '');
             updateWifiConfig("gateway", '');
             handleWifiEnabled(false);
+            } else{
+                updateWifiConfig("active", false);  
+            }
+
         } else if (!apStatus && !checked) {
             showErrorAlert('No puedes desactivar la red WiFi sin activar el modo AP');
+        }else if (checked) {
+            updateWifiConfig("active", true);
+            
         }
     };
     const handleWifiEnabled = (enabled) => {
         switch (enabled) {
             case false:
                 if (webSocket) {
-                    let message = { action: 'setWifiConfig', wifiActive: false };
+                    let message = { action: 'SETWIFICONFIG', wifiActive: false };
                     webSocket.send(JSON.stringify(message));
                 } else {
                     console.log('WebSocket no está inicializado');
@@ -186,11 +194,12 @@ const WifiConfigComponent = ({ wifiConfig, wifiNetworks, apStatus, updateWifiCon
                         </Form.Group>
 
                     </Card.Body>
-                    <Card.Header className={`d-flex flex-row justify-content-between align-items-center `}>
+                    <div hidden={!wifiConfig.active}>
+                    <Card.Header className={`d-flex flex-row justify-content-between align-items-center `} >
                         <h5 className="mb-0">IP Estática:</h5>
                     </Card.Header>
 
-                    <Card.Body hidden={!wifiConfig.active} >
+                    <Card.Body  >
 
                         <Form.Group className="mb-3">
                             <Form.Label >Dirección IP:</Form.Label>
@@ -228,6 +237,7 @@ const WifiConfigComponent = ({ wifiConfig, wifiNetworks, apStatus, updateWifiCon
                             </>
                         } </Button>
                     </Card.Body>
+                    </div>
                 </Card>
             </Col>
         </Row>

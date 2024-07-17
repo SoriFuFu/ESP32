@@ -7,6 +7,7 @@ import './App.css';
 import Menu from './Menu';
 import Panel from './Panel';
 import Config from './Config';
+import { resetAlert, showSuccessAlert } from './alerts';
 
 const App = () => {
     const [isLoading, setIsLoading] = useState(true);
@@ -19,10 +20,9 @@ const App = () => {
     const [webSocket, setWebSocket] = useState(null);
 
     const handleGetConfig = () => {
-
-        // const ws = new WebSocket('ws://bubela.duckdns.org/ws');
+        
+        // const ws = new WebSocket('ws://192.168.4.1/ws');
         const ws = new WebSocket('ws://' + window.location.hostname + '/ws');
-
 
         setWebSocket(ws);
         ws.onopen = () => {
@@ -64,11 +64,25 @@ const App = () => {
             }else if (action === 'UPDATE_RELAY_STATUS') {
                 let relayName = message.relay;
                 let relayStatus = message.command;
+                let relayStatusChange ;
+                if (relayStatus === 'ON') {
+                    relayStatusChange = 'encendido';
+                } else if (relayStatus === 'INACTIVE') {
+                    relayStatusChange = 'apagado';
+                }else if (relayStatus === 'ACTIVE') {
+                    relayStatusChange = 'activo';
+                }else if (relayStatus === 'PAUSE') {
+                    relayStatusChange = 'pausado';
+                }else if (relayStatus === 'CONTINUE') {
+                    relayStatusChange = 'reanudado ';
+                }
                 updateRelayApp(relayName, "state", relayStatus);
+                showSuccessAlert('Relé ' + relayName + ' ' + relayStatusChange);
         
             }else if (action === 'MESSAGE') {
                 if (message.command === 'SUCCESS') {
-                    showSuccessAlert(message.message);
+
+                    resetAlert(message.message, message.ip);
                 } else if (message.command === 'ERROR') {
                     showErrorAlert(message.message);
                 }

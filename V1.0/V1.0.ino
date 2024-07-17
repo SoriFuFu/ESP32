@@ -173,10 +173,10 @@ void setup()
   pinMode(K1OFF, OUTPUT);
   pinMode(K2ON, OUTPUT);
   pinMode(K2OFF, OUTPUT);
-  digitalWrite(K1, LOW);
+  digitalWrite(K1, HIGH);
   digitalWrite(K1ON, LOW);
   digitalWrite(K1OFF, HIGH);
-  digitalWrite(K2, LOW);
+  digitalWrite(K2, HIGH);
   digitalWrite(K2ON, LOW);
   digitalWrite(K2OFF, HIGH);
   // digitalWrite(K3, LOW);
@@ -410,18 +410,21 @@ void sendRelayStatus(String relay, String status) // ENVIAR EL ESTADO DEL RELÉ
   }
 }
 
-void sendMessage(String command, String message) // ENVIAR MENSAJE AL CLIENTE
+bool sendMessage(String command, String message, String ip) // ENVIAR MENSAJE AL CLIENTE
 {
   if (webSocketStatus)
   {
+    String action = "MESSAGE";
     StaticJsonDocument<100> jsonDocument;
-    jsonDocument["action"] = 'MESSAGE';
+    jsonDocument["action"] = action;
     jsonDocument["command"] = command;
     jsonDocument["message"] = message;
-    char jsonString[100];
+    jsonDocument["ip"] = ip;
+    String jsonString;
     serializeJson(jsonDocument, jsonString);
     ws.textAll(jsonString);
   }
+  return true;
 }
 
 void handleGetNetworks(uint8_t num)
@@ -437,18 +440,26 @@ void handleGetNetworks(uint8_t num)
 void handleSetWifiConfig(uint8_t num, const JsonDocument &data)
 {
   bool wifiActive = data["wifiActive"];
+  IPAddress ip = wifiConfig.getIPAddress();
+  String ipString = ip.toString();
+
   if (!wifiActive)
   {
-    // Desactivar WiFi
-    wifiConfig.disconnectWifi();
-    config.setWifiActive(false);
-    config.setWifiStatus(false);
-    config.setWifiSSID("");
-    config.setWifiPassword("");
-    config.setWifiIP("");
-    config.setWifiSubnet("");
-    config.setWifiGateway("");
-    displayLCD.clearWifi();
+    bool okSendMessage = sendMessage("SUCCESS", "Wifi desactivado", ipString);
+    if (okSendMessage)
+    {
+      delay(3000);
+      // Desactivar WiFi
+      wifiConfig.disconnectWifi();
+      config.setWifiActive(false);
+      config.setWifiStatus(false);
+      config.setWifiSSID("");
+      config.setWifiPassword("");
+      config.setWifiIP("");
+      config.setWifiSubnet("");
+      config.setWifiGateway("");
+      displayLCD.clearWifi();
+    }
   }
   else
   {
@@ -475,11 +486,16 @@ void handleSetWifiConfig(uint8_t num, const JsonDocument &data)
     if (saveWifiConfigData)
     {
       logSave.saveLog(getDateTime(), "Configuración de red guardada");
-      sendMessage("SUCCESS", "Configuración de red guardada, reiniciando el dispositivo");
+      bool okSendMessage = sendMessage("SUCCESS", "Configuración de red guardada, reiniciando el dispositivo", ipConfig);
+      if (okSendMessage)
+      {
+        delay(3000);
+        ESP.restart();
+      }
     }
     else
     {
-      sendMessage("ERROR", "Error al guardar la configuración de red");
+      sendMessage("ERROR", "Error al guardar la configuración de red", ipString);
       logSave.saveLog(getDateTime(), "Error al guardar la configuración de red");
     }
   }
@@ -646,7 +662,7 @@ void relayOn(int relayPin, String relay, RelayState &state) // ENCENDER EL RELÉ
   int ledOff = relay == "K1" ? K1OFF : K2OFF;
   digitalWrite(ledOff, LOW);
   digitalWrite(ledOn, HIGH);
-  digitalWrite(relayPin, HIGH);
+  digitalWrite(relayPin, LOW);
   state = ON;
   config.setRelayState(relay, "ON");
   sendRelayStatus(relay, "ON");
@@ -657,7 +673,7 @@ void relayStart(int relayPin, String relay, RelayState &state) // ACTIVAR EL REL
   int ledOff = relay == "K1" ? K1OFF : K2OFF;
   digitalWrite(ledOff, LOW);
   digitalWrite(ledOn, HIGH);
-  digitalWrite(relayPin, HIGH);
+  digitalWrite(relayPin, LOW);
   state = ACTIVE;
   config.setRelayState(relay, "ACTIVE");
   sendRelayStatus(relay, "ACTIVE");
@@ -668,7 +684,7 @@ void relayPause(int relayPin, String relay, RelayState &state) // PAUSAR EL REL�
   int ledOff = relay == "K1" ? K1OFF : K2OFF;
   digitalWrite(ledOn, LOW);
   digitalWrite(ledOff, HIGH);
-  digitalWrite(relayPin, LOW);
+  digitalWrite(relayPin, HIGH);
   state = PAUSE;
   config.setRelayState(relay, "PAUSE");
   sendRelayStatus(relay, "PAUSE");
@@ -679,7 +695,7 @@ void relayContinue(int relayPin, String relay, RelayState &state) // CONTINUAR E
   int ledOff = relay == "K1" ? K1OFF : K2OFF;
   digitalWrite(ledOff, LOW);
   digitalWrite(ledOn, HIGH);
-  digitalWrite(relayPin, HIGH);
+  digitalWrite(relayPin, LOW);
   state = ACTIVE;
   config.setRelayState(relay, "ACTIVE");
   sendRelayStatus(relay, "ACTIVE");
@@ -690,7 +706,7 @@ void relayStop(int relayPin, String relay, RelayState &state) // APAGAR EL RELÉ
   int ledOff = relay == "K1" ? K1OFF : K2OFF;
   digitalWrite(ledOn, LOW);
   digitalWrite(ledOff, HIGH);
-  digitalWrite(relayPin, LOW);
+  digitalWrite(relayPin, HIGH);
   state = INACTIVE;
   config.setRelayState(relay, "INACTIVE");
   sendRelayStatus(relay, "INACTIVE");
@@ -701,7 +717,7 @@ void relayInactive(int relayPin, String relay, RelayState &state) // APAGAR EL R
   int ledOff = relay == "K1" ? K1OFF : K2OFF;
   digitalWrite(ledOn, LOW);
   digitalWrite(ledOff, HIGH);
-  digitalWrite(relayPin, LOW);
+  digitalWrite(relayPin, HIGH);
   state = OFF;
   config.setRelayState(relay, "INACTIVE");
   sendRelayStatus(relay, "INACTIVE");
