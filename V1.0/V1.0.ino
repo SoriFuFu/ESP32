@@ -90,11 +90,53 @@ bool webSocketStatus = false;
 void setup()
 {
   Serial.begin(115200);
-  // Deshabilitar el watchdog de hardware del núcleo 0
-  disableCore0WDT();
+  // // Deshabilitar el watchdog de hardware del núcleo 0
+  // disableCore0WDT();
 
-  // Deshabilitar el watchdog de hardware del núcleo 1
-  disableCore1WDT();
+  // // Deshabilitar el watchdog de hardware del núcleo 1
+  // disableCore1WDT();
+
+  //***** CONFIGURACIÓN DE LOS BOTONES DE ENTRADA
+  btnOk.attach(OK, INPUT_PULLDOWN);       // RESET COMO PULLUP
+  btnUp.attach(UP, INPUT_PULLDOWN);       // UP COMO PULLDOWN
+  btnDown.attach(DOWN, INPUT_PULLDOWN);   // DOWN COMO PULLDOWN
+  btnLeft.attach(LEFT, INPUT_PULLDOWN);   // LEFT COMO PULLDOWN
+  btnRight.attach(RIGHT, INPUT_PULLDOWN); // DERECHA COMO PULLDOWN
+  btnK1.attach(BTN_K1, INPUT_PULLDOWN);   // ENTRADA BOTON K1 COMO PULLDOWN
+  btnK2.attach(BTN_K2, INPUT_PULLDOWN);   // ENTRADA BOTON K2 COMO PULLDOWN
+  // btnK3.attach(BTN_K3, INPUT_PULLDOWN);   // ENTRADA BOTON K3 COMO PULLDOWN
+  // btnK4.attach(BTN_K4, INPUT_PULLDOWN);   // ENTRADA BOTON K4 COMO PULLDOWN
+
+  //***** ESTABLECER EL TIEMPO DE REBOTE DE CADA BOTÓN
+  btnOk.interval(20);
+  btnUp.interval(20);
+  btnDown.interval(20);
+  btnLeft.interval(20);
+  btnRight.interval(20);
+  btnK1.interval(50);
+  btnK2.interval(50);
+  // btnK3.interval(20);
+  // btnK4.interval(20);
+
+  //***** CONFIGURACIÓN DE LOS RELÉS DE SALIDA Y ESTABLECERLOS EN BAJO
+  pinMode(K1, OUTPUT);
+  pinMode(K2, OUTPUT);
+  pinMode(K3, OUTPUT);
+  pinMode(K4, OUTPUT);
+  pinMode(K1ON, OUTPUT);
+  pinMode(K1OFF, OUTPUT);
+  pinMode(K2ON, OUTPUT);
+  pinMode(K2OFF, OUTPUT);
+  digitalWrite(K1, HIGH);
+  digitalWrite(K1ON, LOW);
+  digitalWrite(K1OFF, HIGH);
+  digitalWrite(K2, HIGH);
+  digitalWrite(K2ON, LOW);
+  digitalWrite(K2OFF, HIGH);
+  // digitalWrite(K3, LOW);
+  // digitalWrite(K4, LOW);
+
+  config.setAllRelayState("INACTIVE");
 
   // Deshabilitar el watchdog de software del bucle
   disableLoopWDT();
@@ -141,48 +183,6 @@ void setup()
   //***** INICIAR EL SERVIDOR HTTP
   server.begin();
   Serial.println("Servidor HTTP iniciado");
-
-  //***** CONFIGURACIÓN DE LOS BOTONES DE ENTRADA
-  btnOk.attach(OK, INPUT_PULLDOWN);       // RESET COMO PULLUP
-  btnUp.attach(UP, INPUT_PULLDOWN);       // UP COMO PULLDOWN
-  btnDown.attach(DOWN, INPUT_PULLDOWN);   // DOWN COMO PULLDOWN
-  btnLeft.attach(LEFT, INPUT_PULLDOWN);   // LEFT COMO PULLDOWN
-  btnRight.attach(RIGHT, INPUT_PULLDOWN); // DERECHA COMO PULLDOWN
-  btnK1.attach(BTN_K1, INPUT_PULLDOWN);   // ENTRADA BOTON K1 COMO PULLDOWN
-  btnK2.attach(BTN_K2, INPUT_PULLDOWN);   // ENTRADA BOTON K2 COMO PULLDOWN
-  // btnK3.attach(BTN_K3, INPUT_PULLDOWN);   // ENTRADA BOTON K3 COMO PULLDOWN
-  // btnK4.attach(BTN_K4, INPUT_PULLDOWN);   // ENTRADA BOTON K4 COMO PULLDOWN
-
-  //***** ESTABLECER EL TIEMPO DE REBOTE DE CADA BOTÓN
-  btnOk.interval(20);
-  btnUp.interval(20);
-  btnDown.interval(20);
-  btnLeft.interval(20);
-  btnRight.interval(20);
-  btnK1.interval(50);
-  btnK2.interval(50);
-  // btnK3.interval(20);
-  // btnK4.interval(20);
-
-  //***** CONFIGURACIÓN DE LOS RELÉS DE SALIDA Y ESTABLECERLOS EN BAJO
-  pinMode(K1, OUTPUT);
-  pinMode(K2, OUTPUT);
-  pinMode(K3, OUTPUT);
-  pinMode(K4, OUTPUT);
-  pinMode(K1ON, OUTPUT);
-  pinMode(K1OFF, OUTPUT);
-  pinMode(K2ON, OUTPUT);
-  pinMode(K2OFF, OUTPUT);
-  digitalWrite(K1, HIGH);
-  digitalWrite(K1ON, LOW);
-  digitalWrite(K1OFF, HIGH);
-  digitalWrite(K2, HIGH);
-  digitalWrite(K2ON, LOW);
-  digitalWrite(K2OFF, HIGH);
-  // digitalWrite(K3, LOW);
-  // digitalWrite(K4, LOW);
-
-  config.setAllRelayState("INACTIVE");
 
   //***** CONFIGURAR EL RTC
 

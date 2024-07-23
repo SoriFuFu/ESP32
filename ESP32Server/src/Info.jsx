@@ -63,7 +63,7 @@ const InfoConfig = ({ deviceInfo, wifiConfig, apConfig, relay }) => {
                     </Card>
                 </Col>
             </Row>
-            <Row>
+            <Row className='mb-3' >
                 {Object.keys(relay).map((key) => {
                     const individualRelay = relay[key];
                     return (
