@@ -50,19 +50,21 @@ const App = () => {
                 setRelayConfig(data.Relay);
                 setDeviceInfo(data.Device);
                 setIsLoading(false);
+                localStorage.setItem("relayNameK1", data.Relay.K1.name);
+                localStorage.setItem("relayNameK2", data.Relay.K2.name);
             } else if (action === 'GETNETWORKS') {
-                setWifiNetworks(message.networks);
-             
+                setWifiNetworks(message.networks);             
+            
             }else if (action === 'UPDATE_TIMER') {
                 let K1Time = message.timeK1;
                 let K2Time = message.timeK2;
                 updateRelayApp('K1', "remainingTime", K1Time);
                 updateRelayApp('K2', "remainingTime", K2Time);
 
-
-
+            
             }else if (action === 'UPDATE_RELAY_STATUS') {
-                let relayName = message.relay;
+                let relay= message.relay;
+                let relayName;
                 let relayStatus = message.command;
                 let relayStatusChange ;
                 if (relayStatus === 'ON') {
@@ -76,15 +78,31 @@ const App = () => {
                 }else if (relayStatus === 'CONTINUE') {
                     relayStatusChange = 'reanudado ';
                 }
-                updateRelayApp(relayName, "state", relayStatus);
-                showSuccessAlert('Relé ' + relayName + ' ' + relayStatusChange);
-        
-            }else if (action === 'MESSAGE') {
-                if (message.command === 'SUCCESS') {
+                if (relay === 'K1' ) {
+                    relayName = localStorage.getItem("relayNameK1");
+                }else if (relay === 'K2') {
+                    relayName = localStorage.getItem("relayNameK2");
+                }
 
-                    resetAlert(message.message, message.ip);
+                updateRelayApp(relay, "state", relayStatus);
+                showSuccessAlert(relayName + ' ' + relayStatusChange);
+        
+            
+            
+            }else if (action === 'MESSAGE') {
+                if (message.command === 'SUCCESS_WIFI') {
+
+                    resetAlert("Reiniciando el dispositivo", message.ip);
                 } else if (message.command === 'ERROR') {
                     showErrorAlert(message.message);
+                } else if (message.command === 'SUCCESS_AP') {
+                    showSuccessAlert(message.message);
+                }else if (message.command === 'SUCCESS_RELAY') {
+                    showSuccessAlert(message.message);
+                }else if (message.command === 'RESET') {
+                    resetAlert("Reiniciando el dispositivo");
+                } else if (message.command === 'FACTORYRESET') {
+                    resetAlert("Restableciendo el dispositivo");
                 }
             }
         };

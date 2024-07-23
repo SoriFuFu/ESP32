@@ -291,7 +291,10 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len, uint8_t num)
     }
     else if (action == "RESET")
     {
-      ESP.restart();
+      reset();
+    }else if (action == "FACTORYRESET")
+    {
+      factoryReset();
     }
     else if (action == "GETLOGS")
     {
@@ -486,7 +489,7 @@ void handleSetWifiConfig(uint8_t num, const JsonDocument &data)
     if (saveWifiConfigData)
     {
       logSave.saveLog(getDateTime(), "Configuración de red guardada");
-      bool okSendMessage = sendMessage("SUCCESS", "Configuración de red guardada, reiniciando el dispositivo", ipConfig);
+      bool okSendMessage = sendMessage("SUCCESS_WIFI", "Configuración de red guardada, reiniciando el dispositivo", ipConfig);
       if (okSendMessage)
       {
         delay(3000);
@@ -525,6 +528,11 @@ void handleSetApConfig(uint8_t num, const JsonDocument &data)
     config.setApStatus(true);
     IPAddress ip = wifiConfig.getAPIP();
     displayLCD.printAp();
+    bool okSendMessage = sendMessage("SUCCESS_AP", "AP activado con el nombre " + ssid, ip.toString());
+    if (okSendMessage)
+    {
+      Serial.println("AP activado");
+    }
   }
   else if (active == "false")
   {
@@ -533,6 +541,12 @@ void handleSetApConfig(uint8_t num, const JsonDocument &data)
     config.setApStatus(false);
     wifiConfig.stopAP();
     displayLCD.clearAp();
+    bool okSendMessage = sendMessage("SUCCESS_AP", "AP desactivado", "");
+    if (okSendMessage)
+    {
+      Serial.println("AP desactivado");
+    }
+
   }
 }
 
@@ -544,12 +558,28 @@ void handleSetRelayConfig(const JsonDocument &data)
   {
     bool relayActive = data["KActive"];
     config.setRelayActive(relay, relayActive);
+    String state = relayActive ? "activado" : "desactivado";
+    bool okSendMessage = sendMessage("SUCCESS_RELAY", "Relé " + relay + " " + state, "");
+    if (okSendMessage)
+    {
+      Serial.print("Relé ");
+      Serial.print(relay);
+      Serial.println(state);
+    }
   }
   else if (action == "SETRELAYNAME")
   {
     String relayName = data["relayName"];
     config.setRelayName(relay, relayName);
     displayLCD.printName(relayName);
+    bool okSendMessage = sendMessage("SUCCESS_RELAY", "Nombre del relé " + relay + " actualizado", "");
+    if (okSendMessage)
+    {
+      Serial.print("Nombre del relé ");
+      Serial.print(relay);
+      Serial.println(" actualizado");
+    }
+
   }
 }
 
@@ -1072,16 +1102,35 @@ void taskSupervisor()
 //***** FUNCIONES DEL SISTEMA
 void reset() // REINICIAR EL DISPOSITIVO
 {
-  Serial.println("Reiniciando...");
-
-  ESP.restart();
+  bool okSendMessage = sendMessage("RESET", "Reiniciando el dispositivo", "");
+  if (okSendMessage)
+  {
+    delay(3000);
+    ESP.restart();
+  }
 }
 
 void factoryReset() // RESTABLECER LA CONFIGURACIÓN DE FÁBRICA
 {
   Serial.println("Restableciendo la configuración de fábrica...");
-  // config.factoryReset();
-  // reset();
+ bool factoryResetState = config.factoryReset();
+  if (factoryResetState)
+  {
+    logSave.saveLog(getDateTime(), "Configuración de fábrica restablecida");
+    bool okSendMessage = sendMessage("FACTORYRESET", "Configuración de fábrica restablecida", "");
+    if (okSendMessage)
+    {
+      delay(3000);
+      ESP.restart();
+    }
+  }
+  else
+  {
+    logSave.saveLog(getDateTime(), "Error al restablecer la configuración de fábrica");
+    bool okSendMessage = sendMessage("ERROR", "Error al restablecer la configuración de fábrica", "");
+    Serial.println("Error al restablecer la configuración de fábrica");
+  }
+  
 }
 
 void initConnection(bool wifiActive, bool apActive)

@@ -7,8 +7,30 @@
 class ConfigManager
 {
 private:
-  StaticJsonDocument<1024> configDoc; 
-  const String configFilePath = "/config.json"; // Ruta estática del archivo JSON
+  StaticJsonDocument<1024> configDoc;
+  const String configFilePath = "/config.json";   // Ruta estática del archivo JSON
+  const String factoryFilePath = "/factory.json"; // Ruta estática del archivo de configuración de fábrica
+
+  bool loadFactoryDefaults()
+  {
+    File factoryFile = SPIFFS.open(factoryFilePath, "r");
+    if (!factoryFile)
+    {
+      Serial.println("Failed to open factory defaults file");
+      return false;
+    }
+
+    DeserializationError error = deserializeJson(configDoc, factoryFile);
+    if (error)
+    {
+      Serial.println("Failed to parse factory defaults file");
+      factoryFile.close();
+      return false;
+    }
+
+    factoryFile.close();
+    return true;
+  }
 
 public:
   ConfigManager() {}
@@ -58,6 +80,18 @@ public:
     serializeJson(configDoc, configFile);
     configFile.close();
   }
+  bool factoryReset() // MÉTODO PARA RESTABLECER LA CONFIGURACIÓN DE FÁBRICA
+    {
+        if (loadFactoryDefaults())
+        {
+            saveConfig();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
   //*****GETTERS *****//
   bool getWifiActive() // MÉTODO PARA OBTENER EL ESTADO DEL WIFI
@@ -160,8 +194,6 @@ public:
     return configDoc["Relay"][relay]["timerSelected"];
   }
 
-
-
   //*****SETTERS *****//
   void setLastReboot(String lastReboot) // MÉTODO PARA CAMBIAR LA FECHA DEL ÚLTIMO REINICIO
   {
@@ -181,7 +213,7 @@ public:
     configDoc["Wifi"]["gateway"] = "";
     saveConfig();
   }
- 
+
   void setApSSID(String ssid) // MÉTODO PARA CAMBIAR EL NOMBRE DEL PUNTO DE ACCESO
   {
     configDoc["AP"]["ssid"] = ssid;
@@ -277,8 +309,7 @@ public:
     saveConfig();
   }
 
-
-// MÉTODOS DE LOS RELÉS  
+  // MÉTODOS DE LOS RELÉS
   void setRelayActive(String relay, bool active) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ
   {
 
@@ -305,8 +336,7 @@ public:
 
   void setRelayState(String relay, String state) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ
   {
-      configDoc["Relay"][relay]["state"] = state;
-    
+    configDoc["Relay"][relay]["state"] = state;
   }
 
   void setAllRelayState(String state) // MÉTODO PARA CAMBIAR EL ESTADO DE TODOS LOS RELÉS
@@ -321,7 +351,6 @@ public:
     configDoc["Relay"][relay]["timerSelected"] = timerSelected;
     saveConfig();
   }
-  
 };
 
 #endif

@@ -3,6 +3,7 @@ import { Card, Form, Button, Row, Col, Spinner } from 'react-bootstrap';
 import { BsSearchHeart, BsEye, BsEyeSlash } from "react-icons/bs";
 import { FaUpload } from "react-icons/fa";
 import { showErrorAlert, showSuccessAlert } from './alerts';
+import Swal from 'sweetalert2';
 
 
 const WifiConfigComponent = ({ wifiConfig, wifiNetworks, apStatus, updateWifiConfig, webSocket }) => {
@@ -37,15 +38,32 @@ const WifiConfigComponent = ({ wifiConfig, wifiNetworks, apStatus, updateWifiCon
             setIsLoadingSetWifiConfig(false);
             return;
         }
-        if (webSocket) {
-            let message = { action: 'SETWIFICONFIG', wifiActive: true, ssid: selectedNetwork, password: wifiConfig.password, ip: wifiConfig.ip, subnet: wifiConfig.subnet, gateway: wifiConfig.gateway };
-            webSocket.send(JSON.stringify(message));
-            updateWifiConfig("active", true);
-            updateWifiConfig("status", true);
-            updateWifiConfig("ssid", selectedNetwork);
-        } else {
-            console.log('WebSocket no está inicializado');
-        }
+        Swal.fire({
+            title: "¿Quieres guardar los cambios? El dispositivo se reiniciará",
+            showDenyButton: true,
+            showCancelButton: false,
+            confirmButtonText: "Guardar",
+            denyButtonText: `No guardar`,
+          }).then((result) => {
+            /* Read more about isConfirmed, isDenied below */
+            if (result.isConfirmed) {
+              if (webSocket) {
+                let message = { action: 'SETWIFICONFIG', wifiActive: true, ssid: selectedNetwork, password: wifiConfig.password, ip: wifiConfig.ip, subnet: wifiConfig.subnet, gateway: wifiConfig.gateway };
+                webSocket.send(JSON.stringify(message));
+                updateWifiConfig("active", true);
+                updateWifiConfig("status", true);
+                updateWifiConfig("ssid", selectedNetwork);
+            } else {
+                console.log('WebSocket no está inicializado');
+            }
+            Swal.fire("Cambios guardados", "", "success");
+            setIsLoadingSetWifiConfig(false);
+            } else if (result.isDenied) {
+              Swal.fire("Cambios no guardados", "", "info");
+              setIsLoadingSetWifiConfig(false);
+            }
+          });
+       
     };
     //ACTIVAR O DESACTIVAR LA RED WIFI
     const handleWifiEnabledChange = (checked) => {

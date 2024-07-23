@@ -10,10 +10,18 @@ const handleReset = () => {
     if (webSocket) {
         const message = { action: 'RESET' };
         webSocket.send(JSON.stringify(message));
-        showSuccessAlert('Dispositivo reiniciado');
     }
     else {
         showErrorAlert('Error al reiniciar el dispositivo');
+    }
+}
+const handleFactoryReset = () => {
+    if (webSocket) {
+        const message = { action: 'FACTORYRESET' };
+        webSocket.send(JSON.stringify(message));
+    }
+    else {
+        showErrorAlert('Error al restablecer el dispositivo');
     }
 }
 
@@ -29,7 +37,7 @@ const handleReset = () => {
                                 <Col md={12} className='d-flex justify-content-between align-items-center'>
                                 <Button variant="primary" className='ms-1 me-2' style={{ width: 'calc(50% - 8px)' }} onClick={() => handleReset()}> <GrPowerReset className='me-2' /> Reiniciar</Button>
    
-                                    <Button variant="secondary" className='me-1' style={{ width: 'calc(50% - 8px)' }}> <MdOutlineLockReset  className='me-2' /> Restablecer</Button>
+                                    <Button variant="secondary" className='me-1' style={{ width: 'calc(50% - 8px)' }} onClick={() => handleFactoryReset()}> <MdOutlineLockReset  className='me-2' /> Restablecer</Button>
                                 </Col>
 
                         </Form.Group>

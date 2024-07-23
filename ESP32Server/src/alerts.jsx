@@ -26,7 +26,7 @@ export const showSuccessAlert = (message) => {
 export const resetAlert = (message, ip) => {
   let timerInterval;
   Swal.fire({
-    title: "Reiniciando equipo",
+    title: message,
     html: "La ventana se cerrará en <b></b> segundos.",
     timer: 10000,
     timerProgressBar: true,
@@ -44,10 +44,13 @@ export const resetAlert = (message, ip) => {
   }).then((result) => {
     if (result.dismiss === Swal.DismissReason.timer) {
       console.log("Se ha reiniciado el equipo");
-      let url = 'http://' + ip;
-      console.log(url);
-      window.location.href = url ; // Reemplaza con la URL a la que deseas redirigir
+      if (!ip === "") {
+        let url = 'http://' + ip;
+        console.log(url);
+        window.location.href = url; // Reemplaza con la URL a la que deseas redirigir
+      }
     }
   });
-  
+
 }
+

@@ -1,9 +1,10 @@
 {
     "Device": {
         "name": "BaBuIoT",
-        "version": "1.0.0",
+        "firmwareVersion": "1.1",
         "status": "ACTIVE",
-        "lastUpdate": "2021-09-01 12:00:00"
+        "serialNumber": "B020223",
+        "lastReboot": "2024-07-23 12:00:00"
     },
     "Wifi": {
         "active": false,
@@ -13,7 +14,7 @@
         "ip": "",
         "subnet": "",
         "gateway": "",
-        "mac": ""
+        "mac": "24:0A:C4:00:00:00"
     },
     "AP": {
         "active": true,
@@ -26,7 +27,7 @@
             "active": true,
             "timerState": false,
             "isOn": false,
-            "name": "Dispositivo1",
+            "name": "Dispositivo 1",
             "state": "INACTIVE",
             "timerSelected": 0,
             "remainingTime": 0
@@ -35,7 +36,7 @@
             "active": true,
             "timerState": false,
             "isOn": false,
-            "name": "Dispositivo2",
+            "name": "Dispositivo 2",
             "state": "INACTIVE",
             "timerSelected": 0,
             "remainingTime": 0
