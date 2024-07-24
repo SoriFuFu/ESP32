@@ -81,7 +81,7 @@ const Panel = ({ webSocket, Relay, updateRelayApp }) => {
         console.log(relay, value);
         if (relay in Relay) {
             if (webSocket) {
-                const message = {action: "relayHandler", relay: relay, commad: 'SET_TIMER', timerState: false };
+                const message = {action: "RELAYHANDLER", relay: relay, command: 'SET_TIMER', timerState: false };
                 webSocket.send(JSON.stringify(message));
             } else {
                 console.log('WebSocket no está inicializado');
