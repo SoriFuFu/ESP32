@@ -316,6 +316,11 @@ public:
     configDoc["Relay"][relay]["active"] = active;
     saveConfig();
   }
+  void setRelayIsOn(String relay, bool isOn) // MÉTODO PARA CAMBIAR EL ESTADO DEL RELÉ
+  {
+    configDoc["Relay"][relay]["isOn"] = isOn;
+    saveConfig();
+  }
 
   void setRelayTimerState(String relay, bool timerState) // MÉTODO PARA CAMBIAR EL ESTADO DEL TEMPORIZADOR DEL RELÉ
   {

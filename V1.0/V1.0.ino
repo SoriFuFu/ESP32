@@ -695,6 +695,7 @@ void relayOn(int relayPin, String relay, RelayState &state) // ENCENDER EL RELÉ
   digitalWrite(relayPin, LOW);
   state = ON;
   config.setRelayState(relay, "ON");
+  config.setRelayIsOn(relay, true);
   sendRelayStatus(relay, "ON");
 }
 void relayStart(int relayPin, String relay, RelayState &state) // ACTIVAR EL RELÉ
@@ -739,6 +740,7 @@ void relayStop(int relayPin, String relay, RelayState &state) // APAGAR EL RELÉ
   digitalWrite(relayPin, HIGH);
   state = INACTIVE;
   config.setRelayState(relay, "INACTIVE");
+  config.setRelayIsOn(relay, false);
   sendRelayStatus(relay, "INACTIVE");
 }
 void relayInactive(int relayPin, String relay, RelayState &state) // APAGAR EL RELÉ
@@ -750,6 +752,7 @@ void relayInactive(int relayPin, String relay, RelayState &state) // APAGAR EL R
   digitalWrite(relayPin, HIGH);
   state = OFF;
   config.setRelayState(relay, "INACTIVE");
+  config.setRelayIsOn(relay, false);
   sendRelayStatus(relay, "INACTIVE");
 }
 void setManualTimer() // MOSTRAR PARPADEO
