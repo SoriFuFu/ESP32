@@ -19,6 +19,7 @@ Ticker ticker500ms;
 Ticker ticker1s;
 Ticker ticker1min;
 Ticker ticker5min;
+Ticker ticker24h;
 Ticker tickerSupervisor;
 
 AsyncWebServer server(80);
@@ -84,6 +85,8 @@ unsigned long ticker1sSupervisor = 0;
 unsigned long ticker1minSupervisor = 0;
 unsigned long ticker5minSupervisor = 0;
 
+int wifiReconnectCount = 0;
+
 bool webSocketStatus = false;
 
 // SETUP DE LA APLICACIÓN PRINCIPAL
@@ -143,7 +146,7 @@ void setup()
   delay(1000);
   if (!rtc.begin())
   {
-    Serial.println("RTC module is NOT found");
+    Serial.println("Módulo RTC no detectado");
   }
   rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   SPIFFS.begin();      // Inicializar el sistema de archivos SPIFFS
@@ -157,7 +160,7 @@ void setup()
   bool lcdActive = displayLCD.initDisplay();
   if (!lcdActive)
   {
-    Serial.println("Error al iniciar la pantalla LCD");
+    Serial.println("Pantalla LCD no detectada");
   }
   else
   {
@@ -167,7 +170,8 @@ void setup()
   //***** INICIALIZAR LA CONEXIÓN WIFI Y AP
   bool wifiActive = config.getWifiActive(); // Verificar si el WiFi está activado
   bool apActive = config.getApActive();     // Verificar si el AP está activado
-  initConnection(wifiActive, apActive);     // Inicializar la conexión WiFi y AP
+
+  initConnection(wifiActive, apActive); // Inicializar la conexión WiFi y AP
 
   //***** CONFIGURAR EL CANAL WEBSOCKET PARA LA CONFIGURACIÓN
   ws.onEvent(onEvent);
@@ -1062,6 +1066,7 @@ void task1s()
 
 void task1min()
 {
+  verifyWifiConnection();
   ticker1minSupervisor = millis();
 }
 
@@ -1070,29 +1075,6 @@ void task5min()
   LCD_OFF();
   displayState = false;
   ticker5minSupervisor = millis();
-  bool verifyWifi = config.verifyWifiConnection();
-  if (verifyWifi)
-  {
-    displayLCD.printWifi();
-    Serial.println("Conexión WiFi correcta");
-  }
-  else
-  {
-    displayLCD.printAp();
-    Serial.println("Conexión WiFi fallida, reintentando...");
-    bool wifiConnectionState = wifiConnection();
-    if (wifiConnectionState)
-    {
-      displayLCD.printWifi();
-      Serial.println("Conexión WiFi establecida");
-    }
-    else
-    {
-      displayLCD.printAp();
-      Serial.println("Error al conectar a la red WiFi");
-      Serial.println("Reintentando en 5 minutos...");
-    }
-  }
 }
 
 void taskSupervisor()
@@ -1158,7 +1140,8 @@ void factoryReset() // RESTABLECER LA CONFIGURACIÓN DE FÁBRICA
     Serial.println("Error al restablecer la configuración de fábrica");
   }
 }
-bool wifiConnection()
+
+bool wifiConnection() // INICIAR LA CONEXIÓN WIFI
 {
   String wifiSSID = config.getWifiSSID();
   String wifiPassword = config.getWifiPassword();
@@ -1168,46 +1151,107 @@ bool wifiConnection()
   bool wifiState = wifiConfig.initWifi(wifiSSID.c_str(), wifiPassword.c_str(), ip, subnet, gateway);
   if (wifiState)
   {
-    return true;
+    displayLCD.printWifi();
     logSave.saveLog(getDateTime(), "Conexión WiFi establecida");
+    return true;
   }
   else
   {
+    displayLCD.clearWifi();
     logSave.saveLog(getDateTime(), "Error al iniciar la conexión WiFi, iniciando AP por defecto");
     return false;
   }
 }
-bool apConnection()
+
+void verifyWifiConnection() // VERIFICAR LA CONEXIÓN WIFI
+{
+
+  bool wifiStatus = config.getWifiStatus();
+  if (wifiStatus)
+  {
+    String wifiSSID = config.getWifiSSID();
+    if (wifiSSID != "")
+    {
+      bool verifyWifi = wifiConfig.verifyWifiConnection();
+      if (verifyWifi)
+      {
+        displayLCD.printWifi();
+        Serial.println("Conexión WiFi correcta");
+      }
+      else
+      {
+        if (wifiReconnectCount > 5)
+        {
+          logSave.saveLog(getDateTime(), "Reintentos de conexión WiFi excedidos");
+          Serial.println("Reintentos de conexión WiFi excedidos");
+          config.setWifiStatus(false);
+        }
+        else
+        {
+          Serial.println("Reintentando la conexión WiFi...");
+          wifiReconnect();
+        }
+      }
+    }
+  }
+}
+
+void wifiReconnect() // RECONEXIÓN WIFI
+{
+
+  Serial.println("Conexión WiFi fallida, reintentando...");
+  bool wifiConnectionState = wifiConnection();
+  if (wifiConnectionState)
+  {
+    displayLCD.printWifi();
+    Serial.println("Conexión WiFi establecida");
+    wifiReconnectCount = 0;
+  }
+  else
+  {
+    displayLCD.printAp();
+
+    Serial.println("Error al conectar a la red WiFi");
+    int remainingReconnect = 6 - wifiReconnectCount;
+    Serial.print(remainingReconnect);
+    Serial.println(" intentos restantes.");
+    Serial.println("Volviendo en 5 minutos...");
+    wifiReconnectCount++;
+  }
+}
+
+bool apConnection() // INICIAR EL PUNTO DE ACCESO
 {
   String apSSID = config.getApSSID();
   String apPassword = config.getApPassword();
   bool apState = wifiConfig.initAP(apSSID.c_str(), apPassword.c_str());
   if (apState)
   {
+    displayLCD.printAp();
     logSave.saveLog(getDateTime(), "Conexión AP establecida");
     return true;
   }
   else
   {
+    displayLCD.clearAp();
     logSave.saveLog(getDateTime(), "Error al iniciar el punto de acceso");
     return false;
   }
 }
 
-void initConnection(bool wifiActive, bool apActive)
+void initConnection(bool wifiActive, bool apActive) // INICIAR PRIMERA CONEXIÓN
 {
-
+  wifiReconnectCount = 1;
   if (wifiActive && apActive) // Inicializar WiFi y AP
   {
     displayLCD.printText("Conectando a WiFi...", 0, 1);
     displayLCD.printText("Conectando AP...", 0, 2);
     bool wifiState = wifiConnection();
     bool apState = apConnection();
+    displayLCD.clearDisplay();
     if (wifiState && apState)
     {
-      displayLCD.clearDisplay();
       displayLCD.printWifi();
-      displayLCD.printAp();
       config.setMacAddress(wifiConfig.getMACAddress()); // GUARDAR LA DIRECCIÓN MAC
     }
     else
@@ -1215,7 +1259,6 @@ void initConnection(bool wifiActive, bool apActive)
       bool apState = apConnection();
       if (apState)
       {
-        displayLCD.clearDisplay();
         displayLCD.printAp();
       }
     }
@@ -1226,20 +1269,17 @@ void initConnection(bool wifiActive, bool apActive)
     bool wifiState = wifiConnection();
     if (wifiState)
     {
-      displayLCD.clearDisplay();
       displayLCD.printWifi();
-      config.setMacAddress(wifiConfig.getMACAddress()); // GUARDAR LA DIRECCIÓN MAC
+      config.setMacAddress(wifiConfig.getMACAddress());
     }
     else
     {
-
       displayLCD.clearLine(1);
       displayLCD.clearLine(2);
       displayLCD.printText("Error, conectando AP", 0, 1);
       bool apState = apConnection();
       if (apState)
       {
-        displayLCD.clearDisplay();
         displayLCD.printAp();
       }
     }
@@ -1252,7 +1292,6 @@ void initConnection(bool wifiActive, bool apActive)
     bool apState = apConnection();
     if (apState)
     {
-      displayLCD.clearDisplay();
       displayLCD.printAp();
     }
     else
@@ -1263,7 +1302,6 @@ void initConnection(bool wifiActive, bool apActive)
       apState = apConnection();
       if (apState)
       {
-        displayLCD.clearDisplay();
         displayLCD.printAp();
       }
     }
@@ -1311,6 +1349,12 @@ void printLocalTime() // IMPRIMIR LA HORA LOCAL
   int minute = now.minute();
   int second = now.second();
   displayLCD.printTime(hour, minute, second);
+  if (hour == 00 && minute == 00 && second == 00) // REINICIAR EL DISPOSITIVO A LA MEDIANOCHE
+  {
+    Serial.print(getDateTime());
+    Serial.println(" - Reinicio de mantenimiento");
+    reset();
+  }
 }
 
 void getMemory() // OBTENER LA MEMORIA LIBRE

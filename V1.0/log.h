@@ -67,7 +67,6 @@ public:
     }
 
     logFile.close();
-    Serial.println("Log saved: " + date + " - " + error);
   }
 
   void printLogs() { // MÉTODO PARA IMPRIMIR TODOS LOS REGISTROS

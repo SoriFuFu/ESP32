@@ -75,7 +75,7 @@ public:
             attempts++;
             if (attempts > 40)
             {
-                Serial.println(" No se pudo conectar al WiFi");
+                Serial.println("!!!");
                 return false;
             }
         }
@@ -89,12 +89,18 @@ public:
             bool ipStatic = changeStaticIP(ip, subnet, gateway);
             if (ipStatic)
             {
-                Serial.println("WiFi conectado");
+                Serial.println("IP estática configurada");
+                Serial.print("IP: ");
+                Serial.println(WiFi.localIP());
+                Serial.print("Subnet: ");
+                Serial.println(WiFi.subnetMask());
+                Serial.print("Puerta de enlace: ");
+                Serial.println(WiFi.gatewayIP());
                 return true;
             }
             else
             {
-                Serial.println("Error al conectar al WiFi");
+                Serial.println("Error al configurar la IP estática");
                 return false;
             }
         }
@@ -126,18 +132,11 @@ public:
     {
         if (WiFi.config(ip, gateway, subnet))
         {
-            Serial.println("Configuración de IP estática cambiada");
-            Serial.print("IP: ");
-            Serial.println(WiFi.localIP());
-            Serial.print("Subnet: ");
-            Serial.println(WiFi.subnetMask());
-            Serial.print("Puerta de enlace: ");
-            Serial.println(WiFi.gatewayIP());
+
             return true;
         }
         else
         {
-            Serial.println("Error al cambiar la configuración de IP estática");
             return false;
         }
     }
