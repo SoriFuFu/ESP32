@@ -1,0 +1,26 @@
+{
+  "short_name": "BaBu",
+  "name": "BaBu",
+  "icons": [
+    {
+      "src": "/logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo500.png",
+      "type": "image/png",
+      "sizes": "500x500",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#212529",
+  "theme_color": "#4A90E2",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "description": "Control de riego.",
+  "lang": "es-ES"
+}
